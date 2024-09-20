@@ -96,7 +96,7 @@ function Lux.statelength(model::PairRecSemanticHasher)
 end
 
 # TODO: move to utils.jl
-function add_noise(x::DenseVecOrMat{Float32}, σ::Float32, rng::AbstractRNG)
+function add_noise(x::AbstractVecOrMat{Bool}, σ::Float32, rng::AbstractRNG)
     𝓝 = Normal(0.0f0, σ)
     ε = rand(rng, 𝓝, size(x))
     return x + ε
@@ -179,7 +179,9 @@ model = PairRecSemanticHasher(7, 3)
 params, state = LuxCore.setup(rng, model)
 
 # dummy input
-input = rand(rng, Float32, 7, 5)
+input₁ = rand(rng, Float32, 7, 5)
+input₂ = rand(rng, Float32, 7, 5)
+input_pair = (input₁, input₂)
 
 # run the model
-output, state = Lux.apply(model, input, params, state)
+l = loss(model, input_pair, params, state)
