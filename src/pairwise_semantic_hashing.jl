@@ -168,7 +168,7 @@ end
 
 # TODO: move to utils.jl
 function reconstruction_loss(decoding::DenseVecOrMat{Float32}, target::DenseVecOrMat{Float32})
-    # to maximize this, we will minimize it's negation
+    # to maximize this, we will minimize its negation
     masked_log_probs = @. decoding * (target > 0)
     loss_recon = -sum(masked_log_probs)
     return loss_recon
