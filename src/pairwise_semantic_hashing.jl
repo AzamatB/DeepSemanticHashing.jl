@@ -97,7 +97,7 @@ end
 
 # TODO: move to utils.jl
 function add_noise(x::AbstractVecOrMat{Bool}, σ::Float32, rng::AbstractRNG)
-    𝓝 = Normal(0.0f0, σ)
+    𝓝 = Normal(zero(σ), σ)
     ε = rand(rng, 𝓝, size(x))
     return x + ε
 end
@@ -158,8 +158,8 @@ end
 # distributions `probs` and q, where the distribution q is assumed to be such that
 # qᵢ ∼ Bernoulli(0.5), ∀ i. This case has a closed form solution. For precise details, see:
 # math.stackexchange.com/questions/2604566/kl-divergence-between-two-multivariate-bernoulli-distribution
-function kl_loss(probs::DenseVecOrMat{Float32})
-    ε = nextfloat(0.0f0)
+function kl_loss(probs::DenseVecOrMat{T}) where {T <: Float32}
+    ε = nextfloat(zero(T))
     # add ε for numerical stability when calculating log()
     divergences = @. probs * log(2 * probs + ε) + (1 - probs) * log(2 * (1 - probs) + ε)
     loss_kl = sum(divergences)
