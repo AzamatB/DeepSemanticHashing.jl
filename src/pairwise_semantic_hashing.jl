@@ -143,8 +143,8 @@ function loss(
     state::NamedTuple
 )
     (input₁, input₂) = input_pair
-    (encoding₁, decoding₁), _ = Lux.apply(model, input₁, params, state)
-    (encoding₂, decoding₂), _ = Lux.apply(model, input₂, params, state)
+    (encoding₁, decoding₁), state = Lux.apply(model, input₁, params, state)
+    (encoding₂, decoding₂), state = Lux.apply(model, input₂, params, state)
     loss_kl₁ = kl_loss(encoding₁)
     loss_kl₂ = kl_loss(encoding₂)
     loss_recon₁ = reconstruction_loss(decoding₁, input₁)
