@@ -138,12 +138,19 @@ end
 
 function loss(
     model::PairRecSemanticHasher,
-    input::DenseVecOrMat{Float32},
+    input_pair::NTuple{2,DenseVecOrMat{Float32}},
     params::NamedTuple,
     state::NamedTuple
 )
-    ((encoding, decoding), state) = Lux.apply(model, input, params, state)
-    kl_divergence = kl_loss(encoding)
+    (input₁, input₂) = input_pair
+    (encoding₁, decoding₁), _ = Lux.apply(model, input₁, params, state)
+    (encoding₂, decoding₂), _ = Lux.apply(model, input₂, params, state)
+    loss_kl₁ = kl_loss(encoding₁)
+    loss_kl₂ = kl_loss(encoding₂)
+    loss_recon₁ = reconstruction_loss(decoding₁, input₁)
+    loss_recon₂ = reconstruction_loss(decoding₂, input₁)
+    loss_total = loss_kl₁ + loss_kl₂ + loss_recon₁ + loss_recon₂
+    return loss_total
 end
 
 # TODO: move to utils.jl
@@ -155,10 +162,16 @@ function kl_loss(probs::DenseVecOrMat{Float32})
     ε = nextfloat(0.0f0)
     # add ε for numerical stability when calculating log()
     divergences = @. probs * log(2 * probs + ε) + (1 - probs) * log(2 * (1 - probs) + ε)
-    kl_divergence = sum(divergences)
-    return kl_divergence
+    loss_kl = sum(divergences)
+    return loss_kl
 end
 
+function reconstruction_loss(decoding::DenseVecOrMat{Float32}, target::DenseVecOrMat{Float32})
+    # to maximize this, we will minimize it's negation
+    masked_log_probs = @. decoding * (target > 0)
+    loss_recon = -sum(masked_log_probs)
+    return loss_recon
+end
 
 model = PairRecSemanticHasher(7, 3)
 params, state = LuxCore.setup(rng, model)
