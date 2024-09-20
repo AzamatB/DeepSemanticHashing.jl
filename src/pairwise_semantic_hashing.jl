@@ -74,18 +74,42 @@ function Lux.initialstates(rng::AbstractRNG, model::PairRecSemanticHasher)
     return state
 end
 
+function Lux.parameterlength(model::PairRecSemanticHasher)
+    # importance_weights: (dim_in × 1)
+    # decoder_bias: (dim_in × 1)
+    # word_embedding: (dim_in × dim_encoding)
+    len = model.dim_in * (model.dim_encoding + 2)
+    len += Lux.parameterlength(model.dense_1) # (dim_hidden_1 × dim_in) + (dim_hidden_1 × 1)
+    len += Lux.parameterlength(model.dense_2) # (dim_hidden_2 × dim_hidden_1) + (dim_hidden_2 × 1)
+    len += Lux.parameterlength(model.dropout) # 0
+    len += Lux.parameterlength(model.dense_3) # (dim_encoding × dim_hidden_2) + (dim_encoding × 1)
+    return len
+end
+
+function Lux.statelength(model::PairRecSemanticHasher)
+    len = 1 # σ
+    len += Lux.statelength(model.dense_1) # 0
+    len += Lux.statelength(model.dense_2) # 0
+    len += Lux.statelength(model.dropout) # 2
+    len += Lux.statelength(model.dense_3) # 0
+    return len
+end
+
+# TODO: move to utils.jl
 function add_noise(x::AbstractArray, σ::Real, rng::AbstractRNG)
     𝓝 = Normal(0.0f0, Float32(σ))
     ε = rand(rng, 𝓝, size(x))
     return x + ε
 end
 
+# TODO: move to utils.jl
 function sample_bernoulli_trials(probs::AbstractArray, rng::AbstractRNG)
     uniform_sample = rand(rng, Float32, size(probs))
     trials = (uniform_sample .< probs)
     return trials
 end
 
+# forward pass definition
 function (model::PairRecSemanticHasher)(
     input::AbstractMatrix{<:Real}, params::NamedTuple, state::NamedTuple
 )
