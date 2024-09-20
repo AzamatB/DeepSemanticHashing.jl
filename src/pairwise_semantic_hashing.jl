@@ -160,7 +160,7 @@ end
 # math.stackexchange.com/questions/2604566/kl-divergence-between-two-multivariate-bernoulli-distribution
 function kl_loss(probs::DenseVecOrMat{T}) where {T <: Float32}
     ε = nextfloat(zero(T))
-    # add ε for numerical stability when calculating log()
+    # add small ε to avoid passing 0 to log()
     divergences = @. probs * log(2 * probs + ε) + (1 - probs) * log(2 * (1 - probs) + ε)
     loss_kl = sum(divergences)
     return loss_kl
