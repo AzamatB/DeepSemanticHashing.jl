@@ -173,6 +173,7 @@ function reconstruction_loss(decoding::DenseVecOrMat{Float32}, target::DenseVecO
     return loss_recon
 end
 
+
 model = PairRecSemanticHasher(7, 3)
 params, state = LuxCore.setup(rng, model)
 
