@@ -1,6 +1,6 @@
 using Distributions
 using Lux
-# using LuxCUDA
+using LuxCUDA
 using Optimisers
 using Random
 using Zygote
@@ -8,6 +8,9 @@ using Zygote
 # seeding
 rng = Random.default_rng()
 Random.seed!(rng, 0)
+
+const dev_cpu = cpu_device()
+const dev_gpu = gpu_device()
 
 ##############   Unsupervised Semantic Hashing with Pairwise Reconstruction   ##############
 #
@@ -176,7 +179,9 @@ end
 
 
 model = PairRecSemanticHasher(7, 3)
-params, states = LuxCore.setup(rng, model)
+params, states = LuxCore.setup(rng, model) |> dev_gpu
+
+rng = states.dropout.rng
 
 # dummy input
 input₁ = rand(rng, Float32, 7, 5)
@@ -187,37 +192,36 @@ input_pair = (input₁, input₂)
 l = compute_loss(model, params, states, input_pair)
 
 
-############################################################################################
-# mock up training data
-dataset = [(rand(rng, Float32, 7, 5), rand(rng, Float32, 7, 5)) for _ in 1:100]
+# ############################################################################################
+# # mock up training data
+# dataset = [(rand(rng, Float32, 7, 5), rand(rng, Float32, 7, 5)) for _ in 1:100] .|> dev_gpu
 
-dev = gpu_device()
 
-ad_backend = AutoZygote()
-num_epochs = 10
-η = 0.001f0
-
+# ad_backend = AutoZygote()
+# num_epochs = 10
+# η = 0.001f0
 
 
 
-(loss, states, stats), back = Zygote.pullback(compute_loss, model, params, states, input_pair)
-grads_t = back((one(loss), nothing, nothing))
+
+# (loss, states, stats), back = Zygote.pullback(compute_loss, model, params, states, input_pair)
+# grads_t = back((one(loss), nothing, nothing))
 
 
 
-optimiser = Adam(η)
-train_state = Training.TrainState(model, params, states, optimiser)
-Training.compute_gradients(ad_backend, compute_loss, input_pair, train_state)
+# optimiser = Adam(η)
+# train_state = Training.TrainState(model, params, states, optimiser)
+# Training.compute_gradients(ad_backend, compute_loss, input_pair, train_state)
 
 
-@edit Training.single_train_step!(ad_backend, compute_loss, input_pair, train_state)
-@edit Training.compute_gradients(ad_backend, compute_loss, input_pair, train_state)
+# @edit Training.single_train_step!(ad_backend, compute_loss, input_pair, train_state)
+# @edit Training.compute_gradients(ad_backend, compute_loss, input_pair, train_state)
 
-for epoch in 1:num_epochs
-    # train the model
-    for input_pair in dataset
-        (_, loss, _, train_state) = Training.single_train_step!(
-            ad_backend, lossfn, (x, y), train_state
-        )
-    end
-end
+# for epoch in 1:num_epochs
+#     # train the model
+#     for input_pair in dataset
+#         (_, loss, _, train_state) = Training.single_train_step!(
+#             ad_backend, lossfn, (x, y), train_state
+#         )
+#     end
+# end
