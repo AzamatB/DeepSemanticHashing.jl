@@ -1,4 +1,3 @@
-using Distributions
 using Lux
 # using LuxCUDA
 using Optimisers
@@ -68,9 +67,9 @@ function Lux.initialstates(rng::AbstractRNG, model::PairRecSemanticHasher)
     dense₂ = Lux.initialstates(rng, model.dense₂)
     dense₃ = Lux.initialstates(rng, model.dense₃)
     dropout = Lux.initialstates(rng, model.dropout)
-    σ = 1.0f0
+    λ = 1.0f0
 
-    states = (; dense₁, dense₂, dropout, dense₃, σ)
+    states = (; dense₁, dense₂, dropout, dense₃, λ)
     return states
 end
 
@@ -87,7 +86,7 @@ function Lux.parameterlength(model::PairRecSemanticHasher)
 end
 
 function Lux.statelength(model::PairRecSemanticHasher)
-    len = 1 # σ
+    len = 1 # λ
     len += Lux.statelength(model.dense₁) # 0
     len += Lux.statelength(model.dense₂) # 0
     len += Lux.statelength(model.dropout) # 2
@@ -96,10 +95,16 @@ function Lux.statelength(model::PairRecSemanticHasher)
 end
 
 # TODO: move to utils.jl
-function add_noise(x::AbstractVecOrMat{Bool}, σ::Float32, rng::AbstractRNG)
-    𝓝 = Normal(zero(σ), σ)
-    ε = rand(rng, 𝓝, size(x))
+function add_noise(x::AbstractVecOrMat{Bool}, λ::Float32, rng::AbstractRNG)
+    ε = λ * randn(rng, Float32, size(x))
     return x + ε
+end
+
+# TODO: move to utils.jl
+function decay_noise(states::NamedTuple)
+    λ = max(states.λ - 1.0f-6, 0.0f0)
+    states = (; states.dense₁, states.dense₂, states.dropout, states.dense₃, λ)
+    return states
 end
 
 # TODO: move to utils.jl
@@ -125,7 +130,7 @@ function (model::PairRecSemanticHasher)(
     encoding, _ = model.dense₃(output_dropped, params.dense₃, states.dense₃)
 
     hashcode = sample_bernoulli_trials(encoding, rng)
-    noisy_hashcode = add_noise(hashcode, states.σ, rng)
+    noisy_hashcode = add_noise(hashcode, states.λ, rng)
     # (dim_in × dim_encoding) * (dim_encoding × batch_size) ≡ (dim_in × batch_size)
     projection = word_embedding * noisy_hashcode
     # (dim_in × batch_size) .* (dim_in × 1) .+ (dim_in × 1) ≡ (dim_in × batch_size)
@@ -133,6 +138,7 @@ function (model::PairRecSemanticHasher)(
     decoding = logsoftmax(logits; dims=1) # (dim_in × batch_size)
 
     output = (; encoding, decoding)
+    states = decay_noise(states)
     return (output, states)
 end
 
@@ -196,7 +202,6 @@ dev = gpu_device()
 ad_backend = AutoZygote()
 num_epochs = 10
 η = 0.001f0
-
 
 
 
