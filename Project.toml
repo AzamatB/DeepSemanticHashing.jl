@@ -1,8 +1,5 @@
 [deps]
-Conda = "8f4d0f93-b110-5947-807f-2305c1781a2d"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 Lux = "b2108857-7c20-44ae-9111-449ecde12c47"
 Optimisers = "3bd65402-5787-11e9-1adc-39752487f4e2"
-Pickle = "fbb45041-c46e-462f-888f-7c521cafbc2c"
-PyCall = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"

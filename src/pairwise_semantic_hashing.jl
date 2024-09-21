@@ -185,3 +185,39 @@ input_pair = (input₁, input₂)
 
 # run the model
 l = compute_loss(model, params, states, input_pair)
+
+
+############################################################################################
+# mock up training data
+dataset = [(rand(rng, Float32, 7, 5), rand(rng, Float32, 7, 5)) for _ in 1:100]
+
+dev = gpu_device()
+
+ad_backend = AutoZygote()
+num_epochs = 10
+η = 0.001f0
+
+
+
+
+(loss, states, stats), back = Zygote.pullback(compute_loss, model, params, states, input_pair)
+grads_t = back((one(loss), nothing, nothing))
+
+
+
+optimiser = Adam(η)
+train_state = Training.TrainState(model, params, states, optimiser)
+Training.compute_gradients(ad_backend, compute_loss, input_pair, train_state)
+
+
+@edit Training.single_train_step!(ad_backend, compute_loss, input_pair, train_state)
+@edit Training.compute_gradients(ad_backend, compute_loss, input_pair, train_state)
+
+for epoch in 1:num_epochs
+    # train the model
+    for input_pair in dataset
+        (_, loss, _, train_state) = Training.single_train_step!(
+            ad_backend, lossfn, (x, y), train_state
+        )
+    end
+end
