@@ -70,8 +70,8 @@ function Lux.initialstates(rng::AbstractRNG, model::PairRecSemanticHasher)
     dropout = Lux.initialstates(rng, model.dropout)
     σ = 1.0f0
 
-    state = (; dense₁, dense₂, dropout, dense₃, σ)
-    return state
+    states = (; dense₁, dense₂, dropout, dense₃, σ)
+    return states
 end
 
 function Lux.parameterlength(model::PairRecSemanticHasher)
@@ -111,21 +111,21 @@ end
 
 # forward pass definition
 function (model::PairRecSemanticHasher)(
-    input::DenseVecOrMat{Float32}, params::NamedTuple, state::NamedTuple
+    input::DenseVecOrMat{Float32}, params::NamedTuple, states::NamedTuple
 )
-    rng = state.dropout.rng
+    rng = states.dropout.rng
     importance_weights = params.importance_weights
     word_embedding = params.word_embedding
     decoder_bias = params.decoder_bias
 
     weighted_input = input .* importance_weights
-    output_hidden₁, _ = model.dense₁(weighted_input, params.dense₁, state.dense₁)
-    output_hidden₂, _ = model.dense₂(output_hidden₁, params.dense₂, state.dense₂)
-    output_dropped, _ = model.dropout(output_hidden₂, params.dropout, state.dropout)
-    encoding, _ = model.dense₃(output_dropped, params.dense₃, state.dense₃)
+    output_hidden₁, _ = model.dense₁(weighted_input, params.dense₁, states.dense₁)
+    output_hidden₂, _ = model.dense₂(output_hidden₁, params.dense₂, states.dense₂)
+    output_dropped, _ = model.dropout(output_hidden₂, params.dropout, states.dropout)
+    encoding, _ = model.dense₃(output_dropped, params.dense₃, states.dense₃)
 
     hashcode = sample_bernoulli_trials(encoding, rng)
-    noisy_hashcode = add_noise(hashcode, state.σ, rng)
+    noisy_hashcode = add_noise(hashcode, states.σ, rng)
     # (dim_in × dim_encoding) * (dim_encoding × batch_size) ≡ (dim_in × batch_size)
     projection = word_embedding * noisy_hashcode
     # (dim_in × batch_size) .* (dim_in × 1) .+ (dim_in × 1) ≡ (dim_in × batch_size)
@@ -133,24 +133,24 @@ function (model::PairRecSemanticHasher)(
     decoding = logsoftmax(logits; dims=1) # (dim_in × batch_size)
 
     output = (; encoding, decoding)
-    return (output, state)
+    return (output, states)
 end
 
-function loss(
+function compute_loss(
     model::PairRecSemanticHasher,
-    input_pair::NTuple{2,DenseVecOrMat{Float32}},
     params::NamedTuple,
-    state::NamedTuple
+    states::NamedTuple,
+    input_pair::NTuple{2,DenseVecOrMat{Float32}}
 )
     (input₁, input₂) = input_pair
-    (encoding₁, decoding₁), state = Lux.apply(model, input₁, params, state)
-    (encoding₂, decoding₂), state = Lux.apply(model, input₂, params, state)
-    loss_kl₁ = kl_loss(encoding₁)
-    loss_kl₂ = kl_loss(encoding₂)
-    loss_recon₁ = reconstruction_loss(decoding₁, input₁)
-    loss_recon₂ = reconstruction_loss(decoding₂, input₁)
+    (encoding₁, decoding₁), states = Lux.apply(model, input₁, params, states)
+    (encoding₂, decoding₂), states = Lux.apply(model, input₂, params, states)
+    loss_kl₁ = compute_kl_loss(encoding₁)
+    loss_kl₂ = compute_kl_loss(encoding₂)
+    loss_recon₁ = compute_reconstruction_loss(decoding₁, input₁)
+    loss_recon₂ = compute_reconstruction_loss(decoding₂, input₁)
     loss_total = loss_kl₁ + loss_kl₂ + loss_recon₁ + loss_recon₂
-    return loss_total
+    return (loss_total, states, (;))
 end
 
 # TODO: move to utils.jl
@@ -158,8 +158,8 @@ end
 # distributions `probs` and q, where the distribution q is assumed to be such that
 # qᵢ ∼ Bernoulli(0.5), ∀ i. This case has a closed form solution. For precise details, see:
 # math.stackexchange.com/questions/2604566/kl-divergence-between-two-multivariate-bernoulli-distribution
-function kl_loss(probs::DenseVecOrMat{T}) where {T <: Float32}
-    ε = nextfloat(zero(T))
+function compute_kl_loss(probs::DenseVecOrMat{Float32})
+    ε = 1.0f-45 # the output of nextfloat(zero(Float32))
     # add small ε to avoid passing 0 to log()
     divergences = @. probs * log(2 * probs + ε) + (1 - probs) * log(2 * (1 - probs) + ε)
     loss_kl = sum(divergences)
@@ -167,7 +167,7 @@ function kl_loss(probs::DenseVecOrMat{T}) where {T <: Float32}
 end
 
 # TODO: move to utils.jl
-function reconstruction_loss(decoding::DenseVecOrMat{Float32}, target::DenseVecOrMat{Float32})
+function compute_reconstruction_loss(decoding::DenseVecOrMat{Float32}, target::DenseVecOrMat{Float32})
     # to maximize this, we will minimize its negation
     masked_log_probs = @. decoding * (target > 0)
     loss_recon = -sum(masked_log_probs)
@@ -176,7 +176,7 @@ end
 
 
 model = PairRecSemanticHasher(7, 3)
-params, state = LuxCore.setup(rng, model)
+params, states = LuxCore.setup(rng, model)
 
 # dummy input
 input₁ = rand(rng, Float32, 7, 5)
@@ -184,4 +184,4 @@ input₂ = rand(rng, Float32, 7, 5)
 input_pair = (input₁, input₂)
 
 # run the model
-l = loss(model, input_pair, params, state)
+l = compute_loss(model, params, states, input_pair)
