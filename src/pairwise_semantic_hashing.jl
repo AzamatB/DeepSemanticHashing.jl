@@ -104,14 +104,34 @@ function add_noise(x::AbstractVecOrMat{Bool}, λ::Float32, rng::AbstractRNG)
 end
 
 # TODO: move to utils.jl
-# `add_noise` is not differentiable in a strict sense, so we define a straight-through
-# estimator for its gradient, i.e. we are assuming that it behaves as an identity function
-# for the purpose of gradient computation.
+function sample_bernoulli(probs::DenseVecOrMat{Float32}, rng::AbstractRNG)
+    uniform_sample = rand(rng, Float32, size(probs))
+    trials = (uniform_sample .< probs)
+    return trials
+end
+
+# TODO: move to utils.jl
+# `add_noise(..)` is not differentiable in a strict sense, so to work around this we define
+# a straight-through estimator for its gradient, i.e. we are assuming that it behaves as an
+# identity function for the purpose of gradient computation.
+# See arxiv.org/abs/1308.3432 for some theoretical and empirical justifications behind this.
 function ChainRules.rrule(::typeof(add_noise), x::AbstractVecOrMat{Bool}, λ::Float32, rng::AbstractRNG)
     function identity_pullback(ȳ)
         return (ChainRules.NoTangent(), ȳ, ChainRules.NoTangent(), ChainRules.NoTangent())
     end
     return (add_noise(x, λ, rng), identity_pullback)
+end
+
+# TODO: move to utils.jl
+# `sample_bernoulli(..)` is not differentiable in a strict sense, so to work around this we
+# define a straight-through estimator for its gradient, i.e. we are assuming that it behaves
+# as an identity function for the purpose of gradient computation.
+# See arxiv.org/abs/1308.3432 for some theoretical and empirical justifications behind this.
+function ChainRules.rrule(::typeof(sample_bernoulli), probs::DenseVecOrMat{Float32}, rng::AbstractRNG)
+    function identity_pullback(ȳ)
+        return (ChainRules.NoTangent(), ȳ, ChainRules.NoTangent())
+    end
+    return (sample_bernoulli(probs, rng), identity_pullback)
 end
 
 # TODO: move to utils.jl
@@ -121,12 +141,6 @@ function decay_noise(states::NamedTuple)
     return states
 end
 
-# TODO: move to utils.jl
-function sample_bernoulli_trials(probs::DenseVecOrMat{Float32}, rng::AbstractRNG)
-    uniform_sample = rand(rng, Float32, size(probs))
-    trials = (uniform_sample .< probs)
-    return trials
-end
 
 # forward pass definition
 function (model::PairRecSemanticHasher)(
@@ -143,7 +157,7 @@ function (model::PairRecSemanticHasher)(
     output_dropped, _ = model.dropout(output_hidden₂, params.dropout, states.dropout)
     encoding, _ = model.dense₃(output_dropped, params.dense₃, states.dense₃)
 
-    hashcode = sample_bernoulli_trials(encoding, rng)
+    hashcode = sample_bernoulli(encoding, rng)
     noisy_hashcode = add_noise(hashcode, states.λ, rng)
     # (dim_in × dim_encoding) * (dim_encoding × batch_size) ≡ (dim_in × batch_size)
     projection = word_embedding * noisy_hashcode
@@ -180,7 +194,7 @@ end
 # math.stackexchange.com/questions/2604566/kl-divergence-between-two-multivariate-bernoulli-distribution
 function compute_kl_loss(probs::DenseVecOrMat{Float32})
     ε = 1.0f-45 # the output of nextfloat(zero(Float32))
-    # add small ε to avoid passing 0 to log()
+    # add small ε to avoid passing 0 to log(..)
     divergences = @. probs * log(2 * probs + ε) + (1 - probs) * log(2 * (1 - probs) + ε)
     loss_kl = sum(divergences)
     return loss_kl
