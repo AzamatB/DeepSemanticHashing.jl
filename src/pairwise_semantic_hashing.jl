@@ -1,5 +1,5 @@
 using Lux
-using LuxCUDA
+# using LuxCUDA
 using Optimisers
 using Random
 using Zygote
@@ -8,8 +8,8 @@ using Zygote
 rng = Random.default_rng()
 Random.seed!(rng, 0)
 
-const dev_cpu = cpu_device()
-const dev_gpu = gpu_device()
+const processing_unit = cpu_device()
+# const processing_unit = gpu_device()
 
 ##############   Unsupervised Semantic Hashing with Pairwise Reconstruction   ##############
 #
@@ -185,8 +185,7 @@ end
 
 
 model = PairRecSemanticHasher(7, 3)
-params, states = LuxCore.setup(rng, model) |> dev_gpu
-
+params, states = LuxCore.setup(rng, model) |> processing_unit
 rng = states.dropout.rng
 
 # dummy input
@@ -200,7 +199,7 @@ l = compute_loss(model, params, states, input_pair)
 
 # ############################################################################################
 # # mock up training data
-# dataset = [(rand(rng, Float32, 7, 5), rand(rng, Float32, 7, 5)) for _ in 1:100] .|> dev_gpu
+# dataset = [(rand(rng, Float32, 7, 5), rand(rng, Float32, 7, 5)) for _ in 1:100] .|> processing_unit
 
 
 # ad_backend = AutoZygote()
