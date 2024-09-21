@@ -1,5 +1,5 @@
 using Lux
-# using LuxCUDA
+using LuxCUDA
 using Optimisers
 using Random
 using Zygote
@@ -8,8 +8,7 @@ using Zygote
 rng = Random.default_rng()
 Random.seed!(rng, 0)
 
-const processing_unit = cpu_device()
-# const processing_unit = gpu_device()
+const device = CUDA.functional() ? gpu_device() : cpu_device()
 
 ##############   Unsupervised Semantic Hashing with Pairwise Reconstruction   ##############
 #
@@ -185,7 +184,7 @@ end
 
 
 model = PairRecSemanticHasher(7, 3)
-params, states = LuxCore.setup(rng, model) |> processing_unit
+params, states = LuxCore.setup(rng, model) |> device
 rng = states.dropout.rng
 
 # dummy input
@@ -197,30 +196,27 @@ input_pair = (input₁, input₂)
 l = compute_loss(model, params, states, input_pair)
 
 
-# ############################################################################################
-# # mock up training data
-# dataset = [(rand(rng, Float32, 7, 5), rand(rng, Float32, 7, 5)) for _ in 1:100] .|> processing_unit
+############################################################################################
+# mock up training data
+dataset = [(rand(rng, Float32, 7, 5), rand(rng, Float32, 7, 5)) for _ in 1:100] .|> device
 
 
-# ad_backend = AutoZygote()
-# num_epochs = 10
-# η = 0.001f0
-
-
-
-
-# (loss, states, stats), back = Zygote.pullback(compute_loss, model, params, states, input_pair)
-# grads_t = back((one(loss), nothing, nothing))
+ad_backend = AutoZygote()
+num_epochs = 10
+η = 0.001f0
 
 
 
-# optimiser = Adam(η)
-# train_state = Training.TrainState(model, params, states, optimiser)
-# Training.compute_gradients(ad_backend, compute_loss, input_pair, train_state)
+
+(loss, states, stats), back = Zygote.pullback(compute_loss, model, params, states, input_pair)
+grads_t = back((one(loss), nothing, nothing))
 
 
-# @edit Training.single_train_step!(ad_backend, compute_loss, input_pair, train_state)
-# @edit Training.compute_gradients(ad_backend, compute_loss, input_pair, train_state)
+
+optimiser = Adam(η)
+train_state = Training.TrainState(model, params, states, optimiser)
+Training.compute_gradients(ad_backend, compute_loss, input_pair, train_state)
+
 
 # for epoch in 1:num_epochs
 #     # train the model
