@@ -205,7 +205,7 @@ input₂ = rand(rng, Float32, 7, 5)
 input_pair = (input₁, input₂)
 
 # run the model
-l = compute_loss(model, params, states, input_pair)
+(loss, states, _) = compute_loss(model, params, states, input_pair)
 
 
 ############################################################################################
