@@ -1,3 +1,4 @@
+using ChainRules
 using Lux
 using LuxCUDA
 using Optimisers
@@ -100,6 +101,17 @@ end
 function add_noise(x::AbstractVecOrMat{Bool}, λ::Float32, rng::AbstractRNG)
     ε = λ * randn(rng, Float32, size(x))
     return x + ε
+end
+
+# TODO: move to utils.jl
+# `add_noise` is not differentiable in a strict sense, so we define a straight-through
+# estimator for its gradient, i.e. we are assuming that it behaves as an identity function
+# for the purpose of gradient computation.
+function ChainRules.rrule(::typeof(add_noise), x::AbstractVecOrMat{Bool}, λ::Float32, rng::AbstractRNG)
+    function identity_pullback(ȳ)
+        return (ChainRules.NoTangent(), ȳ, ChainRules.NoTangent(), ChainRules.NoTangent())
+    end
+    return (add_noise(x, λ, rng), identity_pullback)
 end
 
 # TODO: move to utils.jl
