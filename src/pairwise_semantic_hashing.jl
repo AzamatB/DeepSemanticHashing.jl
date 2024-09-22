@@ -22,6 +22,8 @@ struct PairRecSemanticHasher{D1,D2,DO,D3} <: LuxCore.AbstractLuxContainerLayer{(
 )}
     dim_in::Int
     dim_encoding::Int
+    dim_hidden₁::Int
+    dim_hidden₂::Int
 
     dense₁::D1
     dense₂::D2
@@ -47,7 +49,7 @@ function PairRecSemanticHasher(
     D3 = typeof(dense₃)
 
     model = PairRecSemanticHasher{D1,D2,DO,D3}(
-        dim_in, dim_encoding, dense₁, dense₂, dropout, dense₃
+        dim_in, dim_encoding, dim_hidden₁, dim_hidden₂, dense₁, dense₂, dropout, dense₃
     )
     return model
 end
@@ -219,10 +221,17 @@ function compute_reconstruction_loss(decoding::DenseVecOrMat{Float32}, target::D
 end
 
 function train_model!(
-    model::PairRecSemanticHasher, params::NamedTuple, states::NamedTuple, data_train, data_val
+    model::PairRecSemanticHasher,
+    params::NamedTuple,
+    states::NamedTuple,
+    data_train,
+    data_val;
+    num_epochs::Integer,
+    learning_rate::Real = 0.001f0
 )
-    ad_backend = AutoZygote()
+    η = Float32(learning_rate)
     optimiser = Adam(η)
+    ad_backend = AutoZygote()
     train_state = Training.TrainState(model, params, states, optimiser)
 
     for epoch in 1:num_epochs
@@ -256,4 +265,4 @@ data_train = [(rand(rng, Float32, dim_in, batch_size), rand(rng, Float32, dim_in
 data_val = first(data_train)
 ############################################################################################
 
-train_model!(model, params, states, data_train, data_val)
+train_model!(model, params, states, data_train, data_val; num_epochs, learning_rate = η)
