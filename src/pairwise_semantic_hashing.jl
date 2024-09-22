@@ -252,7 +252,7 @@ end
 dim_in = 7
 dim_encoding = 3
 batch_size = 5
-num_epochs = 10
+num_epochs = 50
 η = 0.001f0
 
 model = PairRecSemanticHasher(dim_in, dim_encoding)
