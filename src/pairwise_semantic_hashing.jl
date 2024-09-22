@@ -1,6 +1,7 @@
 using ChainRules
 using Lux
 using LuxCUDA
+using MLUtils
 using Optimisers
 using Random
 using Zygote
