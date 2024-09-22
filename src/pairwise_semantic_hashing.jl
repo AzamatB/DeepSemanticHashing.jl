@@ -193,15 +193,17 @@ end
 function encode(
     model::PairRecSemanticHasher,
     input::DenseVecOrMat{<:Real},
-    params::NamedTuple,
-    states::NamedTuple
+    params::NamedTuple
 )
+    empty_state = (;)
+    dropout_state = (; rng=Random.default_rng(), training=Val(false))
     importance_weights = params.importance_weights
+
     weighted_input = input .* importance_weights
-    output_hidden₁, _ = model.dense₁(weighted_input, params.dense₁, states.dense₁)
-    output_hidden₂, _ = model.dense₂(output_hidden₁, params.dense₂, states.dense₂)
-    output_dropped, _ = model.dropout(output_hidden₂, params.dropout, states.dropout)
-    probs, _ = model.dense₃(output_dropped, params.dense₃, states.dense₃)
+    output_hidden₁, _ = model.dense₁(weighted_input, params.dense₁, empty_state)
+    output_hidden₂, _ = model.dense₂(output_hidden₁, params.dense₂, empty_state)
+    output_dropped, _ = model.dropout(output_hidden₂, params.dropout, dropout_state)
+    probs, _ = model.dense₃(output_dropped, params.dense₃, empty_state)
     # greedily choose most probable bits according to the (multivariate) Bernoulli
     # distribution specified by success probabilities `probs`
     hashcode = round.(Bool, probs)
@@ -262,6 +264,7 @@ function train_model!(
     ad_backend = AutoZygote()
     train_state = Training.TrainState(model, params, states, optimiser)
 
+    local states_val
     for epoch in 1:num_epochs
         # train the model
         for input_pair in data_train
@@ -275,6 +278,7 @@ function train_model!(
         (loss, _, _) = compute_loss(model, train_state.parameters, states_val, data_val)
         @printf "\n\nValidation: Loss   %4.5f\n\n\n" loss
     end
+    return train_state.parameters, states_val
 end
 
 dim_in = 4096
@@ -293,4 +297,6 @@ data_train = [(rand(rng, Float32, dim_in, batch_size), rand(rng, Float32, dim_in
 data_val = first(data_train)
 ############################################################################################
 
-@time train_model!(model, params, states, data_train, data_val; num_epochs, learning_rate = η)
+@time (params, states) = train_model!(model, params, states, data_train, data_val; num_epochs, learning_rate = η)
+
+encode(model, first(data_val), params)
