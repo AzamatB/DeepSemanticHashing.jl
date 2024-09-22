@@ -278,7 +278,7 @@ function train_model!(
         (loss, _, _) = compute_loss(model, train_state.parameters, states_val, data_val)
         @printf "\n\nValidation: Loss   %4.5f\n\n\n" loss
     end
-    return train_state.parameters, states_val
+    return model, train_state.parameters, states_val
 end
 
 dim_in = 4096
@@ -297,6 +297,8 @@ data_train = [(rand(rng, Float32, dim_in, batch_size), rand(rng, Float32, dim_in
 data_val = first(data_train)
 ############################################################################################
 
-@time (params, states) = train_model!(model, params, states, data_train, data_val; num_epochs, learning_rate = η)
+@time (model, params, states) = train_model!(
+    model, params, states, data_train, data_val; num_epochs, learning_rate = η
+)
 
 encode(model, first(data_val), params)
