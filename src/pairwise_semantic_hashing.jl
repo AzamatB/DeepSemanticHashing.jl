@@ -1,4 +1,5 @@
 using ChainRules
+using ChainRules: NoTangent
 using Lux
 using LuxCUDA
 using Optimisers
@@ -111,12 +112,15 @@ end
 
 # TODO: move to utils.jl
 function add_noise(x::AbstractVecOrMat{Bool}, λ::Float32, rng::AbstractRNG)
+    # add small white noise to the encoding
     ε = λ * randn(rng, Float32, size(x))
     return x + ε
 end
 
 # TODO: move to utils.jl
 function sample_bernoulli(probs::DenseVecOrMat{Float32}, rng::AbstractRNG)
+    # sample (multivariate) Bernoulli distribution specified by success probabilities
+    # `probs`
     uniform_sample = rand(rng, Float32, size(probs))
     trials = (uniform_sample .< probs)
     return trials
@@ -127,9 +131,11 @@ end
 # a straight-through estimator for its gradient, i.e. we are assuming that it behaves as an
 # identity function for the purpose of gradient computation.
 # See arxiv.org/abs/1308.3432 for some theoretical and empirical justifications behind this.
-function ChainRules.rrule(::typeof(add_noise), x::AbstractVecOrMat{Bool}, λ::Float32, rng::AbstractRNG)
+function ChainRules.rrule(
+    ::typeof(add_noise), x::AbstractVecOrMat{Bool}, λ::Float32, rng::AbstractRNG
+)
     function identity_pullback(ȳ)
-        return (ChainRules.NoTangent(), ȳ, ChainRules.NoTangent(), ChainRules.NoTangent())
+        return (NoTangent(), ȳ, NoTangent(), NoTangent())
     end
     return (add_noise(x, λ, rng), identity_pullback)
 end
@@ -139,9 +145,11 @@ end
 # define a straight-through estimator for its gradient, i.e. we are assuming that it behaves
 # as an identity function for the purpose of gradient computation.
 # See arxiv.org/abs/1308.3432 for some theoretical and empirical justifications behind this.
-function ChainRules.rrule(::typeof(sample_bernoulli), probs::DenseVecOrMat{Float32}, rng::AbstractRNG)
+function ChainRules.rrule(
+    ::typeof(sample_bernoulli), probs::DenseVecOrMat{Float32}, rng::AbstractRNG
+)
     function identity_pullback(ȳ)
-        return (ChainRules.NoTangent(), ȳ, ChainRules.NoTangent())
+        return (NoTangent(), ȳ, NoTangent())
     end
     return (sample_bernoulli(probs, rng), identity_pullback)
 end
@@ -182,6 +190,24 @@ function (model::PairRecSemanticHasher)(
     return (output, states)
 end
 
+function encode(
+    model::PairRecSemanticHasher,
+    input::DenseVecOrMat{<:Real},
+    params::NamedTuple,
+    states::NamedTuple
+)
+    importance_weights = params.importance_weights
+    weighted_input = input .* importance_weights
+    output_hidden₁, _ = model.dense₁(weighted_input, params.dense₁, states.dense₁)
+    output_hidden₂, _ = model.dense₂(output_hidden₁, params.dense₂, states.dense₂)
+    output_dropped, _ = model.dropout(output_hidden₂, params.dropout, states.dropout)
+    probs, _ = model.dense₃(output_dropped, params.dense₃, states.dense₃)
+    # greedily choose most probable bits according to the (multivariate) Bernoulli
+    # distribution specified by success probabilities `probs`
+    hashcode = round.(Bool, probs)
+    return hashcode
+end
+
 function compute_loss(
     model::PairRecSemanticHasher,
     params::NamedTuple,
@@ -213,7 +239,9 @@ function compute_kl_loss(probs::DenseVecOrMat{Float32})
 end
 
 # TODO: move to utils.jl
-function compute_reconstruction_loss(decoding::DenseVecOrMat{Float32}, target::DenseVecOrMat{Float32})
+function compute_reconstruction_loss(
+    decoding::DenseVecOrMat{Float32}, target::DenseVecOrMat{Float32}
+)
     # to maximize this, we will minimize its negation
     masked_log_probs = @. decoding * (target > 0)
     loss_recon = -sum(masked_log_probs)
