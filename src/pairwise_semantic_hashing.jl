@@ -33,8 +33,8 @@ function PairRecSemanticHasher(
     dim_in::Integer,
     dim_encoding::Integer,
     drop_prob::Real = 0.2f0,
-    dim_hidden₁::Integer = round(Int, range(start=dim_in, stop=dim_encoding, length=4)[2]),
-    dim_hidden₂::Integer = round(Int, range(start=dim_in, stop=dim_encoding, length=4)[3])
+    dim_hidden₁::Integer = log_range(dim_in, dim_encoding, 4)[2],
+    dim_hidden₂::Integer = log_range(dim_in, dim_encoding, 4)[3]
 )
     dense₁ = Dense(dim_in => dim_hidden₁, relu)
     dense₂ = Dense(dim_hidden₁ => dim_hidden₂, relu)
@@ -96,6 +96,15 @@ function Lux.statelength(model::PairRecSemanticHasher)
     len += Lux.statelength(model.dropout) # 2
     len += Lux.statelength(model.dense₃) # 0
     return len # 3
+end
+
+# TODO: move to utils.jl
+function log_range(start::Real, stop::Real, len::Integer)
+    exp_start = log(start)
+    exp_stop = log(stop)
+    exp_rng = range(exp_start, exp_stop; length=len)
+    rng = @. round(Int, exp(exp_rng))
+    return rng
 end
 
 # TODO: move to utils.jl
