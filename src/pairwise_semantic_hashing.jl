@@ -249,9 +249,9 @@ function train_model!(
     end
 end
 
-dim_in = 7
-dim_encoding = 3
-batch_size = 5
+dim_in = 1024
+dim_encoding = 128
+batch_size = 32
 num_epochs = 50
 η = 0.001f0
 
@@ -265,4 +265,4 @@ data_train = [(rand(rng, Float32, dim_in, batch_size), rand(rng, Float32, dim_in
 data_val = first(data_train)
 ############################################################################################
 
-train_model!(model, params, states, data_train, data_val; num_epochs, learning_rate = η)
+@time train_model!(model, params, states, data_train, data_val; num_epochs, learning_rate = η)
