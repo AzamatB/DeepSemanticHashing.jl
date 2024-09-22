@@ -240,16 +240,16 @@ function train_model!(
             (_, loss, _, train_state) = Training.single_train_step!(
                 ad_backend, compute_loss, input_pair, train_state
             )
-            @printf "Epoch [%2d]: Loss %4.5f\n" epoch loss
+            @printf "Epoch [%3d]: Loss   %4.5f\n" epoch loss
         end
         # validate the model
         states_val = Lux.testmode(train_state.states)
         (loss, _, _) = compute_loss(model, train_state.parameters, states_val, data_val)
-        @printf "Validation: Loss %4.5f\n" loss
+        @printf "\n\nValidation: Loss   %4.5f\n\n\n" loss
     end
 end
 
-dim_in = 1024
+dim_in = 4096
 dim_encoding = 128
 batch_size = 32
 num_epochs = 50
