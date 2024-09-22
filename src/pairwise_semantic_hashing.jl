@@ -18,7 +18,7 @@ const device = CUDA.functional() ? gpu_device() : cpu_device()
 # See arxiv.org/abs/2007.00380 for details.
 
 # model structure
-struct PairRecSemanticHasher{D1,D2,DO,D3} <: LuxCore.AbstractLuxContainerLayer{(
+struct PairRecSemanticHasher{D₁,D₂,DO,D₃} <: LuxCore.AbstractLuxContainerLayer{(
     :dense₁, :dense₂, :dropout, :dense₃
 )}
     dim_in::Int
@@ -26,10 +26,10 @@ struct PairRecSemanticHasher{D1,D2,DO,D3} <: LuxCore.AbstractLuxContainerLayer{(
     dim_hidden₁::Int
     dim_hidden₂::Int
 
-    dense₁::D1
-    dense₂::D2
+    dense₁::D₁
+    dense₂::D₂
     dropout::DO
-    dense₃::D3
+    dense₃::D₃
 end
 
 function PairRecSemanticHasher(
@@ -44,12 +44,12 @@ function PairRecSemanticHasher(
     dropout = Dropout(Float32(drop_prob))
     dense₃ = Dense(dim_hidden₂ => dim_encoding, σ)
 
-    D1 = typeof(dense₁)
-    D2 = typeof(dense₂)
+    D₁ = typeof(dense₁)
+    D₂ = typeof(dense₂)
     DO = typeof(dropout)
-    D3 = typeof(dense₃)
+    D₃ = typeof(dense₃)
 
-    model = PairRecSemanticHasher{D1,D2,DO,D3}(
+    model = PairRecSemanticHasher{D₁,D₂,DO,D₃}(
         dim_in, dim_encoding, dim_hidden₁, dim_hidden₂, dense₁, dense₂, dropout, dense₃
     )
     return model
