@@ -1,8 +1,8 @@
 using ChainRules
 using Lux
 using LuxCUDA
-using MLUtils
 using Optimisers
+using Printf
 using Random
 using Zygote
 
@@ -218,47 +218,42 @@ function compute_reconstruction_loss(decoding::DenseVecOrMat{Float32}, target::D
     return loss_recon
 end
 
+function train_model!(
+    model::PairRecSemanticHasher, params::NamedTuple, states::NamedTuple, data_train, data_val
+)
+    ad_backend = AutoZygote()
+    optimiser = Adam(η)
+    train_state = Training.TrainState(model, params, states, optimiser)
 
-model = PairRecSemanticHasher(7, 3)
-params, states = LuxCore.setup(rng, model) |> device
-rng = states.dropout.rng
+    for epoch in 1:num_epochs
+        # train the model
+        for input_pair in data_train
+            (_, loss, _, train_state) = Training.single_train_step!(
+                ad_backend, compute_loss, input_pair, train_state
+            )
+            @printf "Epoch [%2d]: Loss %4.5f\n" epoch loss
+        end
+        # validate the model
+        states_val = Lux.testmode(train_state.states)
+        (loss, _, _) = compute_loss(model, train_state.parameters, states_val, data_val)
+        @printf "Validation: Loss %4.5f\n" loss
+    end
+end
 
-# dummy input
-input₁ = rand(rng, Float32, 7, 5)
-input₂ = rand(rng, Float32, 7, 5)
-input_pair = (input₁, input₂)
-
-# run the model
-(loss, states, _) = compute_loss(model, params, states, input_pair)
-
-
-############################################################################################
-# mock up training data
-dataset = [(rand(rng, Float32, 7, 5), rand(rng, Float32, 7, 5)) for _ in 1:100] .|> device
-
-
-ad_backend = AutoZygote()
+dim_in = 7
+dim_encoding = 3
+batch_size = 5
 num_epochs = 10
 η = 0.001f0
 
+model = PairRecSemanticHasher(dim_in, dim_encoding)
+params, states = LuxCore.setup(rng, model) |> device
 
+############################################################################################
+# mock up training data
+rng = states.dropout.rng
+data_train = [(rand(rng, Float32, dim_in, batch_size), rand(rng, Float32, dim_in, batch_size)) for _ in 1:100] .|> device
+data_val = first(data_train)
+############################################################################################
 
-
-(loss, states, stats), back = Zygote.pullback(compute_loss, model, params, states, input_pair)
-grads_t = back((one(loss), nothing, nothing))
-
-
-
-optimiser = Adam(η)
-train_state = Training.TrainState(model, params, states, optimiser)
-Training.compute_gradients(ad_backend, compute_loss, input_pair, train_state)
-
-
-# for epoch in 1:num_epochs
-#     # train the model
-#     for input_pair in dataset
-#         (_, loss, _, train_state) = Training.single_train_step!(
-#             ad_backend, lossfn, (x, y), train_state
-#         )
-#     end
-# end
+train_model!(model, params, states, data_train, data_val)
