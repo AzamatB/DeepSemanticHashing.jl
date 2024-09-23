@@ -127,10 +127,8 @@ function sample_bernoulli(probs::DenseVecOrMat{Float32}, rng::AbstractRNG)
 end
 
 # TODO: move to utils.jl
-# `add_noise(..)` is not differentiable in a strict sense, so to work around this we define
-# a straight-through estimator for its gradient, i.e. we are assuming that it behaves as an
-# identity function for the purpose of gradient computation.
-# See arxiv.org/abs/1308.3432 for some theoretical and empirical justifications behind this.
+# straight-through estimator for the gradient of `add_noise` function, i.e. we are assuming
+# that it behaves as an identity function (λ = 0) for the purpose of gradient computation.
 # function ChainRules.rrule(
 #     ::typeof(add_noise), x::AbstractVecOrMat{Bool}, λ::Float32, rng::AbstractRNG
 # )
