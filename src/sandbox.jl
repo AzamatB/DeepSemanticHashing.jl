@@ -27,3 +27,10 @@ load_pickle = py"load_pickle"
 
 collection = load_pickle("/Users/aza/Projects/pairrec_data_code/data/reuters_collections")
 (_, training, _, validation, testing, _, data_text_vect, labels, _, id2token) = collection
+
+############################################################################################
+
+model.dim_in
+model.dim_hidden₁
+model.dim_hidden₂
+model.dim_encoding

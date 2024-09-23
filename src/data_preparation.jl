@@ -1,3 +1,5 @@
+using Base.Order: Forward
+using DataStructures
 using Serialization
 
 function load(file_path::AbstractString)
@@ -6,15 +8,42 @@ function load(file_path::AbstractString)
     close(file_stream)
     return structure
 end
-d = size(datapoints, 1)
-data_grouped = Dict{Int32,Vector{Float32}}()
-for (i, a) in enumerate(assignments)
-    vec = get!(data_grouped, a, Float32[])
-    append!(vec, @view datapoints[:, i])
+
+function prepare_dataset(
+    assignments::AbstractVector{I}, datapoints::AbstractMatrix{F}
+) where {I<:Integer,F<:Real}
+    d = size(datapoints, 1)
+    data_sorted = SortedDict{Int32,Vector{Float32}}(Forward)
+    for (idx, cluster) in enumerate(assignments)
+        cluster_datapoints_vec = get!(data_sorted, cluster, Float32[])
+        append!(cluster_datapoints_vec, @view datapoints[:, idx])
+    end
+
+    len = length(data_sorted)
+    clusters = Int32[]
+    cluster_counts = Int32[]
+    cluster_last_indices = Int32[]
+    datapoints_vec = Float32[]
+    sizehint!(clusters, len)
+    sizehint!(cluster_counts, len)
+    sizehint!(cluster_last_indices, len)
+    sizehint!(datapoints_vec, length(datapoints))
+    cluster_last_index = Int32(0)
+
+    for (cluster, cluster_datapoints_vec) in data_sorted
+        # skip over singleton clusters
+        len = length(cluster_datapoints_vec)
+        (len <= d) && continue
+        append!(datapoints_vec, cluster_datapoints_vec)
+        push!(clusters, cluster)
+        cluster_count = len ÷ d
+        cluster_last_index += cluster_count
+        push!(cluster_counts, cluster_count)
+        push!(cluster_last_indices, cluster_last_index)
+    end
+    datapoints_sorted = reshape(datapoints_vec, d, :)
+    return (clusters, cluster_counts, cluster_last_indices, datapoints_sorted)
 end
 
-data_grouped_filtered = Dict{Int32, Matrix{Float32}}()
-for (key, vec) in data_grouped
-    (length(vec) <= d) && continue
-    data_grouped_filtered[key] = reshape(vec, d, :)
-end
+
+(clusters, cluster_counts, cluster_last_indices, datapoints) = prepare_dataset(assignments, datapoints)
