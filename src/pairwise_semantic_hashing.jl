@@ -111,14 +111,14 @@ function log_range(start::Real, stop::Real, len::Integer)
 end
 
 # TODO: move to utils.jl
-function add_noise(x::AbstractVecOrMat{Bool}, λ::Float32, rng::AbstractRNG)
+function add_noise(x::AbstractMatrix{Bool}, λ::Float32, rng::AbstractRNG)
     # add small white noise to the encoding
     ε = λ * randn(rng, Float32, size(x))
     return x + ε
 end
 
 # TODO: move to utils.jl
-function sample_bernoulli(probs::DenseVecOrMat{Float32}, rng::AbstractRNG)
+function sample_bernoulli(probs::DenseMatrix{Float32}, rng::AbstractRNG)
     # sample (multivariate) Bernoulli distribution specified by success probabilities
     # `probs`
     uniform_sample = rand(rng, Float32, size(probs))
@@ -130,7 +130,7 @@ end
 # straight-through estimator for the gradient of `add_noise` function, i.e. we are assuming
 # that it behaves as an identity function (λ = 0) for the purpose of gradient computation.
 # function ChainRules.rrule(
-#     ::typeof(add_noise), x::AbstractVecOrMat{Bool}, λ::Float32, rng::AbstractRNG
+#     ::typeof(add_noise), x::AbstractMatrix{Bool}, λ::Float32, rng::AbstractRNG
 # )
 #     function identity_pullback(ȳ)
 #         return (NoTangent(), ȳ, NoTangent(), NoTangent())
@@ -144,7 +144,7 @@ end
 # as an identity function for the purpose of gradient computation.
 # See arxiv.org/abs/1308.3432 for some theoretical and empirical justifications behind this.
 function ChainRules.rrule(
-    ::typeof(sample_bernoulli), probs::DenseVecOrMat{Float32}, rng::AbstractRNG
+    ::typeof(sample_bernoulli), probs::DenseMatrix{Float32}, rng::AbstractRNG
 )
     function identity_pullback(ȳ)
         return (NoTangent(), ȳ, NoTangent())
@@ -162,7 +162,7 @@ end
 
 # forward pass definition
 function (model::PairRecSemanticHasher)(
-    input::DenseVecOrMat{Float32}, params::NamedTuple, states::NamedTuple
+    input::DenseMatrix{Float32}, params::NamedTuple, states::NamedTuple
 )
     rng = states.dropout.rng
     importance_weights = params.importance_weights
@@ -212,16 +212,12 @@ function compute_loss(
     model::PairRecSemanticHasher,
     params::NamedTuple,
     states::NamedTuple,
-    input_pair::NTuple{2,DenseVecOrMat{Float32}}
+    inputs::DenseMatrix{Float32}
 )
-    (input₁, input₂) = input_pair
-    (encoding₁, decoding₁), states = Lux.apply(model, input₁, params, states)
-    (encoding₂, decoding₂), states = Lux.apply(model, input₂, params, states)
-    loss_kl₁ = compute_kl_loss(encoding₁)
-    loss_kl₂ = compute_kl_loss(encoding₂)
-    loss_recon₁ = compute_reconstruction_loss(decoding₁, input₁)
-    loss_recon₂ = compute_reconstruction_loss(decoding₂, input₁)
-    loss_total = loss_kl₁ + loss_kl₂ + loss_recon₁ + loss_recon₂
+    (encodings, decodings), states = Lux.apply(model, inputs, params, states)
+    loss_kl = compute_kl_loss(encodings)
+    loss_recon = -sum(inputs'decodings)
+    loss_total = loss_kl + loss_recon
     return (loss_total, states, (;))
 end
 
@@ -230,7 +226,7 @@ end
 # distributions `probs` and q, where the distribution q is assumed to be such that
 # qᵢ ∼ Bernoulli(0.5), ∀ i. This case has a closed form solution. For precise details, see:
 # math.stackexchange.com/questions/2604566/kl-divergence-between-two-multivariate-bernoulli-distribution
-function compute_kl_loss(probs::DenseVecOrMat{Float32})
+function compute_kl_loss(probs::DenseMatrix{Float32})
     ε = 1.0f-45 # the output of nextfloat(zero(Float32))
     # add small ε to avoid passing 0 to log(..)
     divergences = @. probs * log(2 * probs + ε) + (1 - probs) * log(2 * (1 - probs) + ε)
@@ -238,15 +234,6 @@ function compute_kl_loss(probs::DenseVecOrMat{Float32})
     return loss_kl
 end
 
-# TODO: move to utils.jl
-function compute_reconstruction_loss(
-    decoding::DenseVecOrMat{Float32}, target::DenseVecOrMat{Float32}
-)
-    # to maximize this, we will minimize its negation
-    masked_log_probs = @. decoding * (target > 0)
-    loss_recon = -sum(masked_log_probs)
-    return loss_recon
-end
 
 function train_model!(
     model::PairRecSemanticHasher,
