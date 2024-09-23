@@ -252,9 +252,9 @@ function train_model!(
     local states_val
     for epoch in 1:num_epochs
         # train the model
-        for input_pair in data_train
+        for input_batch in data_train
             (_, loss, _, train_state) = Training.single_train_step!(
-                ad_backend, compute_loss, input_pair, train_state
+                ad_backend, compute_loss, input_batch, train_state
             )
             @printf "Epoch [%3d]: Loss   %4.5f\n" epoch loss
         end
@@ -286,4 +286,4 @@ data_val = first(data_train)
     model, params, states, data_train, data_val; num_epochs, learning_rate = η
 )
 
-encode(model, first(data_val), params)
+encode(model, data_val, params)
