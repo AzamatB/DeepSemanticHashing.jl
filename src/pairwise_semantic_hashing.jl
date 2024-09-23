@@ -131,14 +131,14 @@ end
 # a straight-through estimator for its gradient, i.e. we are assuming that it behaves as an
 # identity function for the purpose of gradient computation.
 # See arxiv.org/abs/1308.3432 for some theoretical and empirical justifications behind this.
-function ChainRules.rrule(
-    ::typeof(add_noise), x::AbstractVecOrMat{Bool}, λ::Float32, rng::AbstractRNG
-)
-    function identity_pullback(ȳ)
-        return (NoTangent(), ȳ, NoTangent(), NoTangent())
-    end
-    return (add_noise(x, λ, rng), identity_pullback)
-end
+# function ChainRules.rrule(
+#     ::typeof(add_noise), x::AbstractVecOrMat{Bool}, λ::Float32, rng::AbstractRNG
+# )
+#     function identity_pullback(ȳ)
+#         return (NoTangent(), ȳ, NoTangent(), NoTangent())
+#     end
+#     return (add_noise(x, λ, rng), identity_pullback)
+# end
 
 # TODO: move to utils.jl
 # `sample_bernoulli(..)` is not differentiable in a strict sense, so to work around this we
