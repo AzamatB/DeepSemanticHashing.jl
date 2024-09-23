@@ -278,7 +278,7 @@ params, states = LuxCore.setup(rng, model) |> device
 ############################################################################################
 # mock up training data
 rng = states.dropout.rng
-data_train = [(rand(rng, Float32, dim_in, batch_size), rand(rng, Float32, dim_in, batch_size)) for _ in 1:100] .|> device
+data_train = [rand(rng, Float32, dim_in, batch_size) for _ in 1:100] .|> device
 data_val = first(data_train)
 ############################################################################################
 
