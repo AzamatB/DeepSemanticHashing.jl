@@ -33,11 +33,12 @@ include("data_preparation.jl")
 # set hyperparameters
 dim_in = size(first(dataset_train), 1)
 dim_encoding = 512
+β = 0.0001f0
+η = 0.0004f0
 num_epochs = 100
-η = 0.001f0
 
 # construct the model
-model = PairRecSemanticHasher(dim_in, dim_encoding)
+model = PairRecSemanticHasher(dim_in, dim_encoding, β)
 # move the model parameters & states to the GPU if possible
 params, states = LuxCore.setup(rng, model) |> device
 
