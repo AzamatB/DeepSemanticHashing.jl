@@ -13,22 +13,22 @@ function prepare_dataset(
     assignments::AbstractVector{I}, datapoints::AbstractMatrix{F}
 ) where {I<:Integer,F<:Real}
     d = size(datapoints, 1)
-    data_sorted = SortedDict{Int32,Vector{Float32}}(Forward)
+    data_sorted = SortedDict{I,Vector{Float32}}(Forward)
     for (idx, cluster) in enumerate(assignments)
         cluster_datapoints_vec = get!(data_sorted, cluster, Float32[])
         append!(cluster_datapoints_vec, @view datapoints[:, idx])
     end
 
     len = length(data_sorted)
-    clusters = Int32[]
-    cluster_counts = Int32[]
-    cluster_last_indices = Int32[]
+    clusters = I[]
+    cluster_counts = I[]
+    cluster_last_indices = I[]
     datapoints_vec = Float32[]
     sizehint!(clusters, len)
     sizehint!(cluster_counts, len)
     sizehint!(cluster_last_indices, len)
     sizehint!(datapoints_vec, length(datapoints))
-    cluster_last_index = Int32(0)
+    cluster_last_index = I(0)
 
     for (cluster, cluster_datapoints_vec) in data_sorted
         # skip over singleton clusters
@@ -42,8 +42,12 @@ function prepare_dataset(
         push!(cluster_last_indices, cluster_last_index)
     end
     datapoints_sorted = reshape(datapoints_vec, d, :)
+    # normalize the vectors (columns) to have unit a length in L₁-norm
+    datapoints_sorted ./= sum(datapoints_sorted; dims=1)
     return (clusters, cluster_counts, cluster_last_indices, datapoints_sorted)
 end
 
 
 (clusters, cluster_counts, cluster_last_indices, datapoints) = prepare_dataset(assignments, datapoints)
+
+(clusters, cluster_counts, cluster_last_indices, datapoints) = prepare_dataset(assignments, morpheme_counts)
