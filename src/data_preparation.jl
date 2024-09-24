@@ -1,7 +1,7 @@
 using Base.Order: Forward
 using DataStructures
-using Serialization
 using MLUtils
+using Serialization
 
 function load(file_path::AbstractString)
     file_stream = open(file_path, "r")
