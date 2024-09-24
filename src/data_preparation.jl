@@ -1,9 +1,6 @@
-using Base.Order: Forward
-using DataStructures
-using Serialization
-using StatsBase
+# Data preparation & loading functions
 
-function load(file_path::AbstractString)
+function load_file(file_path::AbstractString)
     file_stream = open(file_path, "r")
     structure = deserialize(file_stream)
     close(file_stream)
@@ -42,8 +39,8 @@ end
 
 function load_datasets(device::MLDataDevices.AbstractDevice; split_at::AbstractFloat=0.94)
     @assert 0.0 < split_at < 1.0
-    assignments = load("data/timur_Vectors_assignments.szd")
-    morpheme_counts = load("data/timur_Vectors_counts_matrix.szd")
+    assignments = load_file("data/timur_Vectors_assignments.szd")
+    morpheme_counts = load_file("data/timur_Vectors_counts_matrix.szd")
     assignments = assignments[1, :]
     (clusters, datapoints) = prepare_dataset(assignments, morpheme_counts)
     datapoints_train = datapoints |> device
