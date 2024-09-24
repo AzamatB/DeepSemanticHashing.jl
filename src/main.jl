@@ -20,7 +20,7 @@ const device = CUDA.functional() ? gpu_device() : cpu_device()
 rng = Random.default_rng()
 Random.seed!(rng, 0)
 
-include("utils.jl")
+include("utilities.jl")
 
 include("model.jl")
 
