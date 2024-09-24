@@ -274,10 +274,11 @@ num_epochs = 3
 
 model = PairRecSemanticHasher(dim_in, dim_encoding)
 params, states = LuxCore.setup(rng, model) |> device
+rng = states.dropout.rng
 
 ############################################################################################
 include("data_preparation.jl")
-data_train = load_dataset() |> device
+data_train = device(load_dataset(rng))
 data_val = first(data_train)
 ############################################################################################
 @info "Training..."

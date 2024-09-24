@@ -1,6 +1,7 @@
 using Base.Order: Forward
 using DataStructures
 using Serialization
+using MLUtils
 
 function load(file_path::AbstractString)
     file_stream = open(file_path, "r")
@@ -39,10 +40,11 @@ function prepare_dataset(
     return (clusters, cluster_datapoints)
 end
 
-function load_dataset()
+function load_dataset(rng::AbstractRNG)
     assignments = load("data/timur_Vectors_assignments.szd")
     morpheme_counts = load("data/timur_Vectors_counts_matrix.szd")
     assignments = assignments[1, :]
     (clusters, datapoints) = prepare_dataset(assignments, morpheme_counts)
-    return datapoints
+    data = DataLoader(datapoints; batchsize=0, shuffle=true, rng)
+    return data
 end
