@@ -269,7 +269,7 @@ end
 dim_in = 23834
 dim_encoding = 512
 batch_size = 32
-num_epochs = 2
+num_epochs = 3
 η = 0.001f0
 
 model = PairRecSemanticHasher(dim_in, dim_encoding)
@@ -277,7 +277,7 @@ params, states = LuxCore.setup(rng, model) |> device
 
 ############################################################################################
 include("data_preparation.jl")
-data_train = load_dataset() .|> device
+data_train = load_dataset() |> device
 data_val = first(data_train)
 ############################################################################################
 @info "Training..."
