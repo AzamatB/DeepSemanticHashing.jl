@@ -33,7 +33,7 @@ include("data_preparation.jl")
 # set hyperparameters
 dim_in = size(first(dataset_train), 1)
 dim_encoding = 512
-β = 0.01f0
+β = 0.1f0
 η = 0.0004f0
 num_epochs = 100
 
