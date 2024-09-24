@@ -21,33 +21,28 @@ function prepare_dataset(
 
     len = length(data_sorted)
     clusters = I[]
-    cluster_counts = I[]
-    cluster_last_indices = I[]
-    datapoints_vec = Float32[]
+    cluster_datapoints = Matrix{Float32}[]
     sizehint!(clusters, len)
-    sizehint!(cluster_counts, len)
-    sizehint!(cluster_last_indices, len)
-    sizehint!(datapoints_vec, length(datapoints))
-    cluster_last_index = I(0)
+    sizehint!(cluster_datapoints, len)
 
     for (cluster, cluster_datapoints_vec) in data_sorted
-        # skip over singleton clusters
         len = length(cluster_datapoints_vec)
+        # skip over singleton clusters
         (len <= d) && continue
-        append!(datapoints_vec, cluster_datapoints_vec)
         push!(clusters, cluster)
-        cluster_count = len ÷ d
-        cluster_last_index += cluster_count
-        push!(cluster_counts, cluster_count)
-        push!(cluster_last_indices, cluster_last_index)
+        cluster_datapoints_mat = reshape(cluster_datapoints_vec, d, :)
+        # normalize the vectors (columns) to have a unit length in L₁-norm (all values
+        # already are non-negative)
+        cluster_datapoints_mat ./= sum(cluster_datapoints_mat; dims=1)
+        push!(cluster_datapoints, cluster_datapoints_mat)
     end
-    datapoints_sorted = reshape(datapoints_vec, d, :)
-    # normalize the vectors (columns) to have unit a length in L₁-norm
-    datapoints_sorted ./= sum(datapoints_sorted; dims=1)
-    return (clusters, cluster_counts, cluster_last_indices, datapoints_sorted)
+    return (clusters, cluster_datapoints)
 end
 
-
-(clusters, cluster_counts, cluster_last_indices, datapoints) = prepare_dataset(assignments, datapoints)
-
-(clusters, cluster_counts, cluster_last_indices, datapoints) = prepare_dataset(assignments, morpheme_counts)
+function load_dataset()
+    assignments = load("data/timur_Vectors_assignments.szd")
+    morpheme_counts = load("data/timur_Vectors_counts_matrix.szd")
+    assignments = assignments[1, :]
+    (clusters, datapoints) = prepare_dataset(assignments, morpheme_counts)
+    return datapoints
+end

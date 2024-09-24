@@ -266,24 +266,24 @@ function train_model!(
     return model, train_state.parameters, states_val
 end
 
-dim_in = 4096
-dim_encoding = 128
+dim_in = 23834
+dim_encoding = 512
 batch_size = 32
-num_epochs = 50
+num_epochs = 2
 η = 0.001f0
 
 model = PairRecSemanticHasher(dim_in, dim_encoding)
 params, states = LuxCore.setup(rng, model) |> device
 
 ############################################################################################
-# mock up training data
-rng = states.dropout.rng
-data_train = [rand(rng, Float32, dim_in, batch_size) for _ in 1:100] .|> device
+include("data_preparation.jl")
+data_train = load_dataset() .|> device
 data_val = first(data_train)
 ############################################################################################
-
+@info "Training..."
 @time (model, params, states) = train_model!(
     model, params, states, data_train, data_val; num_epochs, learning_rate = η
 )
 
-encode(model, data_val, params)
+@info "Inference..."
+@show encode(model, data_val, params)
