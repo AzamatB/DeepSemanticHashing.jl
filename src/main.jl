@@ -22,9 +22,7 @@ Random.seed!(rng, 0)
 
 include("utils.jl")
 
-include("pairwise_semantic_hashing.jl")
-
-include("multi_index_semantic_hashing.jl")
+include("model.jl")
 
 include("data_preparation.jl")
 
@@ -35,7 +33,7 @@ include("data_preparation.jl")
 # set hyperparameters
 dim_in = size(first(dataset_train), 1)
 dim_encoding = 512
-num_epochs = 3
+num_epochs = 100
 η = 0.001f0
 
 # construct the model
