@@ -14,11 +14,11 @@ using Serialization
 using StatsBase
 using Zygote
 
+const device = CUDA.functional() ? gpu_device() : cpu_device()
+
 # seeding
 rng = Random.default_rng()
 Random.seed!(rng, 0)
-
-const device = CUDA.functional() ? gpu_device() : cpu_device()
 
 include("utils.jl")
 
