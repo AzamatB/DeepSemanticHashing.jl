@@ -57,6 +57,6 @@ params, states = LuxCore.setup(rng, model) |> device
 
 # perform inference
 @info "Inference..."
-@show encode(model, dataset_test, params)
+@show encode(model, first(dataset_test), params)
 
 # end # DeepSemanticHashing
