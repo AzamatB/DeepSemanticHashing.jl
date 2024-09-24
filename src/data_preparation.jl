@@ -48,13 +48,13 @@ function load_datasets(device::MLDataDevices.AbstractDevice; split_at::AbstractF
     len_val_test = round(Int, (1 - split_at) * length(datapoints_train))
     len_val = len_val_test ÷ 2
 
-    indices_val_test = sample(eachindex(datapoints), len_val_test; replace=false)
+    indices_val_test = sample(eachindex(datapoints_train), len_val_test; replace=false)
     # parition the selected data subset into validation and test sets
     indices_val = indices_val_test[begin:len_val]
     indices_test = indices_val_test[(len_val+1):end]
 
-    datapoints_val = datapoints[indices_val]
-    datapoints_test = datapoints[indices_test]
+    datapoints_val = datapoints_train[indices_val]
+    datapoints_test = datapoints_train[indices_test]
 
     sort!(indices_val_test)
     deleteat!(datapoints_train, indices_val_test)
