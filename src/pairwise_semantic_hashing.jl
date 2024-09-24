@@ -209,6 +209,16 @@ function encode(
     return hashcode
 end
 
+function compute_dataset_loss(
+    model::PairRecSemanticHasher,
+    params::NamedTuple,
+    states::NamedTuple,
+    dataset::AbstractVector{<:DenseMatrix{Float32}}
+)
+    loss = mean(first(compute_loss(model, params, states, data_batch)) for data_batch in dataset)
+    return loss
+end
+
 function compute_loss(
     model::PairRecSemanticHasher,
     params::NamedTuple,
@@ -241,7 +251,8 @@ function train_model!(
     params::NamedTuple,
     states::NamedTuple,
     datapoints_train::AbstractVector{M},
-    datapoints_val::M;
+    datapoints_val::AbstractVector{M},
+    datapoints_test::AbstractVector{M};
     num_epochs::Integer,
     learning_rate::Real = 0.001f0
 ) where {M<:DenseMatrix{Float32}}
@@ -251,21 +262,29 @@ function train_model!(
     train_state = Training.TrainState(model, params, states, optimiser)
     data_train = DataLoader(datapoints_train; batchsize=0, shuffle=true)
 
-    local states_val
+    states_val = Lux.testmode(train_state.states)
+    loss_test = compute_dataset_loss(model, params, states_val, datapoints_test)
+    @printf "Test loss  %4.6f\n" loss_test
+
     for epoch in 1:num_epochs
         # train the model
         for input_batch in data_train
             (_, loss, _, train_state) = Training.single_train_step!(
                 ad_backend, compute_loss, input_batch, train_state
             )
-            @printf "Epoch [%3d]: Loss   %4.5f\n" epoch loss
+            # @printf "Epoch [%3d]: Loss  %4.6f\n" epoch loss
         end
         # validate the model
         states_val = Lux.testmode(train_state.states)
-        (loss, _, _) = compute_loss(model, train_state.parameters, states_val, datapoints_val)
-        @printf "\n\nValidation: Loss   %4.5f\n\n\n" loss
+        loss_val = compute_dataset_loss(model, train_state.parameters, states_val, datapoints_val)
+        @printf "Epoch [%3d]: Validation loss  %4.6f\n" epoch loss_val
     end
-    return model, train_state.parameters, states_val
+
+    params_opt = train_state.parameters
+    loss_test = compute_dataset_loss(model, params_opt, states_val, datapoints_test)
+    @printf "Test loss  %4.6f\n" loss_test
+
+    return model, params_opt, states_val
 end
 
 dim_in = 23834
@@ -279,8 +298,7 @@ params, states = LuxCore.setup(rng, model) |> device
 
 ############################################################################################
 include("data_preparation.jl")
-datapoints_train = load_dataset(device)
-datapoints_val = first(datapoints_train)
+(datapoints_train, datapoints_val, datapoints_test) = load_datasets(device)
 ############################################################################################
 @info "Training..."
 @time (model, params, states) = train_model!(

@@ -1,6 +1,7 @@
 using Base.Order: Forward
 using DataStructures
 using Serialization
+using StatsBase
 
 function load(file_path::AbstractString)
     file_stream = open(file_path, "r")
@@ -39,10 +40,26 @@ function prepare_dataset(
     return (clusters, cluster_datapoints)
 end
 
-function load_dataset(device::MLDataDevices.AbstractDevice)
+function load_datasets(device::MLDataDevices.AbstractDevice; split_at::AbstractFloat=0.94)
+    @assert 0.0 < split_at < 1.0
     assignments = load("data/timur_Vectors_assignments.szd")
     morpheme_counts = load("data/timur_Vectors_counts_matrix.szd")
     assignments = assignments[1, :]
     (clusters, datapoints) = prepare_dataset(assignments, morpheme_counts)
-    return datapoints |> device
+    datapoints_train = datapoints |> device
+    # size of the validation + test sets
+    len_val_test = round(Int, (1 - split_at) * length(datapoints_train))
+    len_val = len_val_test ÷ 2
+
+    indices_val_test = sample(eachindex(datapoints), len_val_test; replace=false)
+    # parition the selected data subset into validation and test sets
+    indices_val = indices_val_test[begin:len_val]
+    indices_test = indices_val_test[(len_val+1):end]
+
+    datapoints_val = datapoints[indices_val]
+    datapoints_test = datapoints[indices_test]
+
+    sort!(indices_val_test)
+    deleteat!(datapoints_train, indices_val_test)
+    return datapoints_train, datapoints_val, datapoints_test
 end
