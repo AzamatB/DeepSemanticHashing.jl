@@ -1,1 +1,0 @@
-# Multi-Index Semantic Hashing
