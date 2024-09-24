@@ -2,6 +2,7 @@ using ChainRules
 using ChainRules: NoTangent
 using Lux
 using LuxCUDA
+using MLUtils
 using Optimisers
 using Printf
 using Random
@@ -239,15 +240,16 @@ function train_model!(
     model::PairRecSemanticHasher,
     params::NamedTuple,
     states::NamedTuple,
-    data_train,
-    data_val;
+    datapoints_train::AbstractVector{M},
+    datapoints_val::M;
     num_epochs::Integer,
     learning_rate::Real = 0.001f0
-)
+) where {M<:DenseMatrix{Float32}}
     η = Float32(learning_rate)
     optimiser = Adam(η)
     ad_backend = AutoZygote()
     train_state = Training.TrainState(model, params, states, optimiser)
+    data_train = DataLoader(datapoints_train; batchsize=0, shuffle=true)
 
     local states_val
     for epoch in 1:num_epochs
@@ -260,7 +262,7 @@ function train_model!(
         end
         # validate the model
         states_val = Lux.testmode(train_state.states)
-        (loss, _, _) = compute_loss(model, train_state.parameters, states_val, data_val)
+        (loss, _, _) = compute_loss(model, train_state.parameters, states_val, datapoints_val)
         @printf "\n\nValidation: Loss   %4.5f\n\n\n" loss
     end
     return model, train_state.parameters, states_val
@@ -274,17 +276,16 @@ num_epochs = 3
 
 model = PairRecSemanticHasher(dim_in, dim_encoding)
 params, states = LuxCore.setup(rng, model) |> device
-rng = states.dropout.rng
 
 ############################################################################################
 include("data_preparation.jl")
-data_train = device(load_dataset(rng))
-data_val = first(data_train)
+datapoints_train = load_dataset(device)
+datapoints_val = first(datapoints_train)
 ############################################################################################
 @info "Training..."
 @time (model, params, states) = train_model!(
-    model, params, states, data_train, data_val; num_epochs, learning_rate = η
+    model, params, states, datapoints_train, datapoints_val; num_epochs, learning_rate=η
 )
 
 @info "Inference..."
-@show encode(model, data_val, params)
+@show encode(model, datapoints_val, params)
