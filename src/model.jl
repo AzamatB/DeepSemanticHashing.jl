@@ -123,14 +123,10 @@ function encode(
     params::NamedTuple
 )
     empty_state = (;)
-    dropout_state = (; rng=Random.default_rng(), training=Val(false))
-    importance_weights = params.importance_weights
-
-    weighted_input = input .* importance_weights
+    weighted_input = input .* params.importance_weights
     output_hidden₁, _ = model.dense₁(weighted_input, params.dense₁, empty_state)
     output_hidden₂, _ = model.dense₂(output_hidden₁, params.dense₂, empty_state)
-    output_dropped, _ = model.dropout(output_hidden₂, params.dropout, dropout_state)
-    probs, _ = model.dense₃(output_dropped, params.dense₃, empty_state)
+    probs, _ = model.dense₃(output_hidden₂, params.dense₃, empty_state)
     # greedily choose most probable bits according to the (multivariate) Bernoulli
     # distribution specified by success probabilities `probs`
     hashcode = round.(Bool, probs)
