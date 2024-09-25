@@ -20,7 +20,7 @@ end
 function PairRecSemanticHasher(
     dim_in::Integer,
     dim_encoding::Integer,
-    drop_prob::Real = 0.2f0,
+    drop_prob::Real = 0.1f0,
     dim_hidden₁::Integer = log_range(dim_in, dim_encoding, 4)[2],
     dim_hidden₂::Integer = log_range(dim_in, dim_encoding, 4)[3]
 )
