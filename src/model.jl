@@ -162,6 +162,8 @@ function compute_dataset_loss(
         batch_size = size(data_batch, 2)
         loss_total += loss / (batch_size^2)
     end
+    # a mean of means
+    loss_total /= length(dataset)
     return loss_total
 end
 
@@ -197,6 +199,7 @@ function train_model!(
             loss_train += loss / (batch_size^2)
             # @printf "Epoch [%3d]: Loss  %4.6f\n" epoch loss
         end
+        loss_train /= length(dataset_train)
         @printf "Epoch [%3d]: Training Loss  %4.6f\n" epoch loss_train
         # validate the model
         states_val = Lux.testmode(train_state.states)
