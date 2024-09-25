@@ -72,8 +72,11 @@ function train_model!(
         @printf "Epoch [%3d]: Validation loss  %4.6f\n" epoch loss_val
         if loss_val < loss_val_min
             loss_val_min = loss_val
-            # save the model parameters
             model_parameters = train_state.parameters
+            # delete previously saved model parameters
+            rm("pretrained_weights", recursive=true)
+            mkpath("pretrained_weights")
+            # save the current model parameters
             jldsave("pretrained_weights/model_weights_from_epoch_$(epoch).jld2"; model_parameters)
         end
     end
