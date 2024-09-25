@@ -28,6 +28,54 @@ include("model.jl")
 
 include("data_preparation.jl")
 
+function train_model!(
+    model::PairRecSemanticHasher,
+    params::NamedTuple,
+    states::NamedTuple,
+    dataset_train::AbstractVector{M},
+    dataset_val::AbstractVector{M},
+    dataset_test::AbstractVector{M};
+    num_epochs::Integer,
+    learning_rate::Real=0.001f0
+) where {M<:DenseMatrix{Float32}}
+    η = Float32(learning_rate)
+    optimiser = Adam(η)
+    ad_backend = AutoZygote()
+    train_state = Training.TrainState(model, params, states, optimiser)
+    data_train = DataLoader(dataset_train; batchsize=0, shuffle=true)
+
+    states_val = Lux.testmode(train_state.states)
+    loss_test = compute_dataset_loss(model, params, states_val, dataset_test)
+    @printf "Test loss  %4.6f\n" loss_test
+
+    @info "Training..."
+    for epoch in 1:num_epochs
+        # train the model
+        loss_train = 0.0f0
+        for inputs_batch in data_train
+            (_, loss, _, train_state) = Training.single_train_step!(
+                ad_backend, compute_loss, inputs_batch, train_state
+            )
+            batch_size = size(inputs_batch, 2)
+            loss_train += loss / (batch_size^2)
+            # @printf "Epoch [%3d]: Loss  %4.6f\n" epoch loss
+        end
+        loss_train /= length(dataset_train)
+        @printf "Epoch [%3d]: Training Loss  %4.6f\n" epoch loss_train
+        # validate the model
+        states_val = Lux.testmode(train_state.states)
+        loss_val = compute_dataset_loss(model, train_state.parameters, states_val, dataset_val)
+        @printf "Epoch [%3d]: Validation loss  %4.6f\n" epoch loss_val
+    end
+    @info "Training completed."
+
+    params_opt = train_state.parameters
+    loss_test = compute_dataset_loss(model, params_opt, states_val, dataset_test)
+    @printf "Test loss  %4.6f\n" loss_test
+
+    return model, params_opt, states_val
+end
+
 
 # load datasets
 (dataset_train, dataset_val, dataset_test) = load_datasets(device)
