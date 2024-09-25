@@ -1,5 +1,3 @@
-# module DeepSemanticHashing
-
 using Base.Order: Forward
 using ChainRules
 using ChainRules: NoTangent
@@ -85,11 +83,8 @@ function train_model!(
     @printf "Test loss  %4.6f\n" loss_test
 
     model_parameters = params_opt |> cpu
-    # delete previously saved model parameters
-    rm("pretrained_weights", recursive=true)
-    mkpath("pretrained_weights")
     # save the current model parameters
-    jldsave("pretrained_weights/model_weights_from_epoch_$(epoch_opt).jld2"; model_parameters)
+    jldsave("pretrained_weights/model_weights_from_epoch_$(epoch_opt)_$(model.dim_encoding)-bits.jld2"; model_parameters)
     return model, params_opt, states_val
 end
 
@@ -99,29 +94,15 @@ end
 
 # set hyperparameters
 dim_in = size(first(dataset_train), 1)
-dim_encoding = 512
 η = 0.0004f0
 num_epochs = 100
 
 # construct the model
-model = PairRecSemanticHasher(dim_in, dim_encoding)
+model = PairRecSemanticHasher(dim_in)
 # move the model parameters & states to the GPU if possible
 params, states = LuxCore.setup(rng, model) |> device
 
 # train the model
 @time (model, params, states) = train_model!(
-    model,
-    params,
-    states,
-    dataset_train,
-    dataset_val,
-    dataset_test;
-    num_epochs,
-    learning_rate=η
+    model, params, states, dataset_train, dataset_val, dataset_test; num_epochs, learning_rate=η
 )
-
-# # perform inference
-# @info "Inference..."
-# hashcode = encode(model, first(dataset_test), params)
-
-# end # DeepSemanticHashing
