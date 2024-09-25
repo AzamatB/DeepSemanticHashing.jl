@@ -46,6 +46,7 @@ function train_model!(
     train_state = Training.TrainState(model, params, states, optimiser)
     data_train = DataLoader(dataset_train; batchsize=0, shuffle=true)
 
+    display(model)
     states_val = Lux.testmode(train_state.states)
     loss_test = compute_dataset_loss(model, params, states_val, dataset_test)
     @printf "Test loss  %4.6f\n" loss_test
