@@ -142,8 +142,13 @@ function compute_dataset_loss(
     states::NamedTuple,
     dataset::AbstractVector{<:DenseMatrix{Float32}}
 )
-    loss = mean(first(compute_loss(model, params, states, data_batch)) for data_batch in dataset)
-    return loss
+    loss_total = 0.0f0
+    for data_batch in dataset
+        (loss, _, _) = compute_loss(model, params, states, data_batch)
+        batch_size = size(data_batch, 2)
+        loss_total += loss / (batch_size^2)
+    end
+    return loss_total
 end
 
 function compute_loss(
@@ -182,12 +187,16 @@ function train_model!(
     @info "Training..."
     for epoch in 1:num_epochs
         # train the model
+        loss_train = 0.0f0
         for inputs_batch in data_train
             (_, loss, _, train_state) = Training.single_train_step!(
                 ad_backend, compute_loss, inputs_batch, train_state
             )
+            batch_size = size(inputs_batch, 2)
+            loss_train += loss / (batch_size^2)
             # @printf "Epoch [%3d]: Loss  %4.6f\n" epoch loss
         end
+        @printf "Epoch [%3d]: Training Loss  %4.6f\n" epoch loss_train
         # validate the model
         states_val = Lux.testmode(train_state.states)
         loss_val = compute_dataset_loss(model, train_state.parameters, states_val, dataset_val)
