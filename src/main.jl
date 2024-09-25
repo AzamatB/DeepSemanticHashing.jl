@@ -4,6 +4,7 @@ using Base.Order: Forward
 using ChainRules
 using ChainRules: NoTangent
 using DataStructures
+using JLD2
 using Lux
 using LuxCUDA
 using MLUtils
@@ -28,6 +29,7 @@ include("model.jl")
 
 include("data_preparation.jl")
 
+
 function train_model!(
     model::PairRecSemanticHasher,
     params::NamedTuple,
@@ -48,6 +50,7 @@ function train_model!(
     loss_test = compute_dataset_loss(model, params, states_val, dataset_test)
     @printf "Test loss  %4.6f\n" loss_test
 
+    loss_val_min = Inf32
     @info "Training..."
     for epoch in 1:num_epochs
         # train the model
@@ -66,6 +69,12 @@ function train_model!(
         states_val = Lux.testmode(train_state.states)
         loss_val = compute_dataset_loss(model, train_state.parameters, states_val, dataset_val)
         @printf "Epoch [%3d]: Validation loss  %4.6f\n" epoch loss_val
+        if loss_val < loss_val_min
+            loss_val_min = loss_val
+            # save the model parameters
+            model_parameters = train_state.parameters
+            jldsave("pretrained_weights/model_weights_from_epoch_$(epoch).jld2"; model_parameters)
+        end
     end
     @info "Training completed."
 
@@ -104,8 +113,8 @@ params, states = LuxCore.setup(rng, model) |> device
     learning_rate=η
 )
 
-# perform inference
-@info "Inference..."
-hashcode = encode(model, first(dataset_test), params)
+# # perform inference
+# @info "Inference..."
+# hashcode = encode(model, first(dataset_test), params)
 
 # end # DeepSemanticHashing
