@@ -96,14 +96,15 @@ function (model::PairRecSemanticHasher)(
     importance_weights = params.importance_weights
     word_embedding = params.word_embedding
     decoder_bias = params.decoder_bias
-
+    # encoding stage
     weighted_input = input .* importance_weights
     output_hidden₁, _ = model.dense₁(weighted_input, params.dense₁, states.dense₁)
     output_hidden₂, _ = model.dense₂(output_hidden₁, params.dense₂, states.dense₂)
     output_dropped, _ = model.dropout(output_hidden₂, params.dropout, states.dropout)
     encoding, _ = model.dense₃(output_dropped, params.dense₃, states.dense₃)
-
     hashcode = sample_bernoulli(encoding, rng)
+
+    # decoding stage
     noisy_hashcode = add_noise(hashcode, states.λ, rng)
     # (dim_in × dim_encoding) * (dim_encoding × batch_size) ≡ (dim_in × batch_size)
     projection = word_embedding * noisy_hashcode
