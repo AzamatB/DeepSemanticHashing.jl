@@ -136,6 +136,19 @@ function encode(
     return hashcode
 end
 
+function compute_loss(
+    model::PairRecSemanticHasher,
+    params::NamedTuple,
+    states::NamedTuple,
+    inputs::DenseMatrix{Float32}
+)
+    (encodings, decodings), states = Lux.apply(model, inputs, params, states)
+    loss_kl = compute_kl_loss(encodings)
+    loss_recon = -sum(inputs'decodings)
+    loss_total = loss_recon + model.β * loss_kl
+    return (loss_total, states, (;))
+end
+
 function compute_dataset_loss(
     model::PairRecSemanticHasher,
     params::NamedTuple,
@@ -149,19 +162,6 @@ function compute_dataset_loss(
         loss_total += loss / (batch_size^2)
     end
     return loss_total
-end
-
-function compute_loss(
-    model::PairRecSemanticHasher,
-    params::NamedTuple,
-    states::NamedTuple,
-    inputs::DenseMatrix{Float32}
-)
-    (encodings, decodings), states = Lux.apply(model, inputs, params, states)
-    loss_kl = compute_kl_loss(encodings)
-    loss_recon = -sum(inputs'decodings)
-    loss_total = loss_recon + model.β * loss_kl
-    return (loss_total, states, (;))
 end
 
 function train_model!(
