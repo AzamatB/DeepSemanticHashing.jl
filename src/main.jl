@@ -14,6 +14,8 @@ using Serialization
 using StatsBase
 using Zygote
 
+CUDA.allowscalar(false)
+
 const device = CUDA.functional() ? gpu_device() : cpu_device()
 
 # seeding
