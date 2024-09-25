@@ -53,6 +53,8 @@ function train_model!(
     @printf "Test loss  %4.6f\n" loss_test
 
     loss_val_min = Inf32
+    epoch_opt = 0
+    params_opt = params
     @info "Training..."
     for epoch in 1:num_epochs
         # train the model
@@ -73,20 +75,21 @@ function train_model!(
         @printf "Epoch [%3d]: Validation loss  %4.6f\n" epoch loss_val
         if loss_val < loss_val_min
             loss_val_min = loss_val
-            model_parameters = train_state.parameters |> cpu
-            # delete previously saved model parameters
-            rm("pretrained_weights", recursive=true)
-            mkpath("pretrained_weights")
-            # save the current model parameters
-            jldsave("pretrained_weights/model_weights_from_epoch_$(epoch).jld2"; model_parameters)
+            epoch_opt = epoch
+            params_opt = train_state.parameters
         end
     end
-    @info "Training completed."
 
-    params_opt = train_state.parameters
+    @info "Training completed."
     loss_test = compute_dataset_loss(model, params_opt, states_val, dataset_test)
     @printf "Test loss  %4.6f\n" loss_test
 
+    model_parameters = params_opt |> cpu
+    # delete previously saved model parameters
+    rm("pretrained_weights", recursive=true)
+    mkpath("pretrained_weights")
+    # save the current model parameters
+    jldsave("pretrained_weights/model_weights_from_epoch_$(epoch_opt).jld2"; model_parameters)
     return model, params_opt, states_val
 end
 
