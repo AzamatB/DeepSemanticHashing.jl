@@ -17,6 +17,7 @@ using Zygote
 
 CUDA.allowscalar(false)
 
+const cpu = cpu_device()
 const device = CUDA.functional() ? gpu_device() : cpu_device()
 
 # seeding
@@ -72,7 +73,7 @@ function train_model!(
         @printf "Epoch [%3d]: Validation loss  %4.6f\n" epoch loss_val
         if loss_val < loss_val_min
             loss_val_min = loss_val
-            model_parameters = train_state.parameters
+            model_parameters = train_state.parameters |> cpu
             # delete previously saved model parameters
             rm("pretrained_weights", recursive=true)
             mkpath("pretrained_weights")
