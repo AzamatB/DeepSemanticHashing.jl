@@ -10,7 +10,6 @@ struct PairRecSemanticHasher{D₁,D₂,DO,D₃} <: LuxCore.AbstractLuxContainerL
     dim_encoding::Int
     dim_hidden₁::Int
     dim_hidden₂::Int
-    β::Float32 # weight of the KL regularizer in the loss function
 
     dense₁::D₁
     dense₂::D₂
@@ -21,7 +20,6 @@ end
 function PairRecSemanticHasher(
     dim_in::Integer,
     dim_encoding::Integer,
-    β::Real,
     drop_prob::Real = 0.2f0,
     dim_hidden₁::Integer = log_range(dim_in, dim_encoding, 4)[2],
     dim_hidden₂::Integer = log_range(dim_in, dim_encoding, 4)[3]
@@ -37,7 +35,7 @@ function PairRecSemanticHasher(
     D₃ = typeof(dense₃)
 
     model = PairRecSemanticHasher{D₁,D₂,DO,D₃}(
-        dim_in, dim_encoding, dim_hidden₁, dim_hidden₂, Float32(β), dense₁, dense₂, dropout, dense₃
+        dim_in, dim_encoding, dim_hidden₁, dim_hidden₂, dense₁, dense₂, dropout, dense₃
     )
     return model
 end
@@ -111,9 +109,8 @@ function (model::PairRecSemanticHasher)(
     logits = @. projection * importance_weights + decoder_bias # (dim_in × batch_size)
     decoding = logsoftmax(logits; dims=1) # (dim_in × batch_size)
 
-    output = (; encoding, decoding)
     states = decay_noise(states)
-    return (output, states)
+    return (decoding, states)
 end
 
 function encode(
@@ -152,11 +149,9 @@ function compute_loss(
     states::NamedTuple,
     inputs::DenseMatrix{Float32}
 )
-    (encodings, decodings), states = Lux.apply(model, inputs, params, states)
-    loss_kl = compute_kl_loss(encodings)
-    loss_recon = -sum(inputs'decodings)
-    loss_total = loss_recon + model.β * loss_kl
-    return (loss_total, states, (;))
+    decodings, states = Lux.apply(model, inputs, params, states)
+    loss = -sum(inputs'decodings)
+    return (loss, states, (;))
 end
 
 function train_model!(
