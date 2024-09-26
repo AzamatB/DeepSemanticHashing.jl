@@ -29,16 +29,17 @@ include("model.jl")
 include("data_preparation.jl")
 
 
-function train_model!(
-    model::PairRecSemanticHasher,
-    params::NamedTuple,
-    states::NamedTuple,
-    dataset_train::AbstractVector{M},
-    dataset_val::AbstractVector{M},
-    dataset_test::AbstractVector{M};
-    num_epochs::Integer,
-    learning_rate::Real=0.001f0
-) where {M<:DenseMatrix{Float32}}
+function train_model!(rng::AbstractRNG; num_epochs::Integer, learning_rate::Real = 0.001f0)
+    # load datasets
+    (dataset_train, dataset_val, dataset_test) = load_datasets(device)
+
+    # construct the model
+    dim_in = size(first(dataset_train), 1)
+    model = PairRecSemanticHasher(dim_in)
+
+    # move the model parameters & states to the GPU if possible
+    params, states = LuxCore.setup(rng, model) |> device
+
     η = Float32(learning_rate)
     optimiser = Adam(η)
     ad_backend = AutoZygote()
@@ -89,20 +90,9 @@ function train_model!(
 end
 
 
-# load datasets
-(dataset_train, dataset_val, dataset_test) = load_datasets(device)
-
 # set hyperparameters
-dim_in = size(first(dataset_train), 1)
 η = 0.0004f0
 num_epochs = 100
 
-# construct the model
-model = PairRecSemanticHasher(dim_in)
-# move the model parameters & states to the GPU if possible
-params, states = LuxCore.setup(rng, model) |> device
-
 # train the model
-@time (model, params, states) = train_model!(
-    model, params, states, dataset_train, dataset_val, dataset_test; num_epochs, learning_rate=η
-)
+@time (model, params, states) = train_model!(rng; num_epochs, learning_rate=η)
