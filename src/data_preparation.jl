@@ -8,30 +8,32 @@ function load_file(file_path::AbstractString)
 end
 
 function prepare_dataset(
-    assignments::AbstractVector{I}, datapoints::AbstractMatrix{F}
-) where {I<:Integer,F<:Real}
-    d = size(datapoints, 1)
-    data_sorted = SortedDict{I,Vector{Float32}}(Forward)
-    for (idx, cluster) in enumerate(assignments)
-        cluster_datapoints_vec = get!(data_sorted, cluster, Float32[])
-        append!(cluster_datapoints_vec, @view datapoints[:, idx])
+    assignments::AbstractMatrix{I}, morpheme_counts::AbstractMatrix{I}
+) where {I<:Integer}
+    # normalize the datapoints (columns) to have a unit length in L₁-norm (all values
+    # already are non-negative)
+    datapoints = Float32.(morpheme_counts ./ sum(morpheme_counts; dims=1))
+    (d, n) = size(datapoints)
+    @assert sum(datapoints; dims=1) ≈ fill(1.0f0, 1, n)
+
+    # construct mini-batches
+    data_sorted = SortedDict{NTuple{2,I},Vector{Float32}}(Forward)
+    for i in axes(assignments, 1)
+        for j in axes(assignments, 2)
+            cluster = assignments[i,j]
+            cluster_datapoints_vec = get!(data_sorted, (i, cluster), Float32[])
+            append!(cluster_datapoints_vec, @view datapoints[:, j])
+        end
     end
 
-    len = length(data_sorted)
-    clusters = I[]
+    clusters = NTuple{2,I}[]
     cluster_datapoints = Matrix{Float32}[]
+    len = length(data_sorted)
     sizehint!(clusters, len)
     sizehint!(cluster_datapoints, len)
-
     for (cluster, cluster_datapoints_vec) in data_sorted
-        len = length(cluster_datapoints_vec)
-        # skip over singleton clusters
-        (len <= d) && continue
-        push!(clusters, cluster)
         cluster_datapoints_mat = reshape(cluster_datapoints_vec, d, :)
-        # normalize the vectors (columns) to have a unit length in L₁-norm (all values
-        # already are non-negative)
-        cluster_datapoints_mat ./= sum(cluster_datapoints_mat; dims=1)
+        push!(clusters, cluster)
         push!(cluster_datapoints, cluster_datapoints_mat)
     end
     return (clusters, cluster_datapoints)
@@ -41,9 +43,10 @@ function load_datasets(device::MLDataDevices.AbstractDevice; split_at::AbstractF
     @assert 0.0 < split_at < 1.0
     assignments = load_file("data/timur_Vectors_assignments.szd")
     morpheme_counts = load_file("data/timur_Vectors_counts_matrix.szd")
-    assignments = assignments[1, :]
+
     (clusters, datapoints) = prepare_dataset(assignments, morpheme_counts)
     datapoints_train = datapoints |> device
+
     # size of the validation + test sets
     len_val_test = round(Int, (1 - split_at) * length(datapoints_train))
     len_val = len_val_test ÷ 2
