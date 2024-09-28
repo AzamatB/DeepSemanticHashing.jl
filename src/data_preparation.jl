@@ -41,8 +41,8 @@ end
 
 function load_datasets(device::MLDataDevices.AbstractDevice; split_at::AbstractFloat=0.94)
     @assert 0.0 < split_at < 1.0
-    assignments = load_file("data/timur_Vectors_assignments.szd")
-    morpheme_counts = load_file("data/timur_Vectors_counts_matrix.szd")
+    assignments = load_file("data/assignments.szd")
+    morpheme_counts = load_file("data/counts_matrix.szd")
 
     (clusters, datapoints) = prepare_dataset(assignments, morpheme_counts)
     datapoints_train = datapoints |> device
