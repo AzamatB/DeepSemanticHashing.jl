@@ -49,9 +49,9 @@ end
 
 
 # load datasets
-assignments = load_file("data/timur_Vectors_assignments.szd")
-morpheme_counts = load_file("data/timur_Vectors_counts_matrix.szd")
-morphemes = load_file("data/timur_Vectors_words.szd")
+assignments = load_file("data/assignments.szd")
+morpheme_counts = load_file("data/counts_matrix.szd")
+morphemes = load_file("data/words.szd")
 # normalize the datapoints (columns) to have a unit length in L₁-norm (all values
 # already are non-negative)
 datapoints = Float32.(morpheme_counts ./ sum(morpheme_counts; dims=1))
