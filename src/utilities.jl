@@ -75,12 +75,6 @@ function ChainRules.rrule(
     return (sample_bernoulli(probs, rng), identity_pullback)
 end
 
-function decay_noise(states::NamedTuple)
-    λ = max(states.λ - 1.0f-6, 0.0f0)
-    states = (; states.dense₁, states.dense₂, states.dropout, states.dense₃, λ)
-    return states
-end
-
 # Calculates Kullback-Leibler (KL) divergence between two multivariate Bernoulli
 # distributions `probs` and q, where the distribution q is assumed to be such that
 # qᵢ ∼ Bernoulli(0.5), ∀ i. This case has a closed form solution. For precise details, see:

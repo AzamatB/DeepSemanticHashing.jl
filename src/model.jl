@@ -49,21 +49,16 @@ function Lux.initialparameters(rng::AbstractRNG, model::PairRecSemanticHasher)
 
     dense₁ = Lux.initialparameters(rng, model.dense₁)
     dense₂ = Lux.initialparameters(rng, model.dense₂)
-    dropout = Lux.initialparameters(rng, model.dropout)
     dense₃ = Lux.initialparameters(rng, model.dense₃)
 
-    params = (; importance_weights, dense₁, dense₂, dropout, dense₃, word_embedding, decoder_bias)
+    params = (; importance_weights, dense₁, dense₂, dense₃, word_embedding, decoder_bias)
     return params
 end
 
 function Lux.initialstates(rng::AbstractRNG, model::PairRecSemanticHasher)
-    dense₁ = Lux.initialstates(rng, model.dense₁)
-    dense₂ = Lux.initialstates(rng, model.dense₂)
-    dense₃ = Lux.initialstates(rng, model.dense₃)
     dropout = Lux.initialstates(rng, model.dropout)
     λ = 1.0f0
-
-    states = (; dense₁, dense₂, dropout, dense₃, λ)
+    states = (; dropout, λ)
     return states
 end
 
@@ -74,17 +69,13 @@ function Lux.parameterlength(model::PairRecSemanticHasher)
     len = model.dim_in * (model.dim_encoding + 2)
     len += Lux.parameterlength(model.dense₁) # (dim_hidden₁ × dim_in) + (dim_hidden₁ × 1)
     len += Lux.parameterlength(model.dense₂) # (dim_hidden₂ × dim_hidden₁) + (dim_hidden₂ × 1)
-    len += Lux.parameterlength(model.dropout) # 0
     len += Lux.parameterlength(model.dense₃) # (dim_encoding × dim_hidden₂) + (dim_encoding × 1)
     return len
 end
 
 function Lux.statelength(model::PairRecSemanticHasher)
     len = 1 # λ
-    len += Lux.statelength(model.dense₁) # 0
-    len += Lux.statelength(model.dense₂) # 0
     len += Lux.statelength(model.dropout) # 2
-    len += Lux.statelength(model.dense₃) # 0
     return len # 3
 end
 
@@ -98,10 +89,10 @@ function (model::PairRecSemanticHasher)(
     decoder_bias = params.decoder_bias
     # encoding stage
     weighted_input = input .* importance_weights
-    output_hidden₁, _ = model.dense₁(weighted_input, params.dense₁, states.dense₁)
-    output_hidden₂, _ = model.dense₂(output_hidden₁, params.dense₂, states.dense₂)
-    output_dropped, _ = model.dropout(output_hidden₂, params.dropout, states.dropout)
-    encoding, _ = model.dense₃(output_dropped, params.dense₃, states.dense₃)
+    output_hidden₁, _ = model.dense₁(weighted_input, params.dense₁, (;))
+    output_hidden₂, _ = model.dense₂(output_hidden₁, params.dense₂, (;))
+    output_dropped, _ = model.dropout(output_hidden₂, (;), states.dropout)
+    encoding, _ = model.dense₃(output_dropped, params.dense₃, (;))
     hashcode = sample_bernoulli(encoding, rng)
 
     # decoding stage
@@ -111,9 +102,12 @@ function (model::PairRecSemanticHasher)(
     # (dim_in × batch_size) .* (dim_in × 1) .+ (dim_in × 1) ≡ (dim_in × batch_size)
     logits = @. projection * importance_weights + decoder_bias # (dim_in × batch_size)
     decoding = logsoftmax(logits; dims=1) # (dim_in × batch_size)
-
     output = (; encoding, decoding)
-    states = decay_noise(states)
+
+    # decay noise
+    λ = max(states.λ - 1.0f-6, 0.0f0)
+    states = (; states.dropout, λ)
+
     return (output, states)
 end
 
@@ -122,11 +116,10 @@ function encode(
     input::DenseVecOrMat{<:Real},
     params::NamedTuple
 )
-    empty_state = (;)
     weighted_input = input .* params.importance_weights
-    output_hidden₁, _ = model.dense₁(weighted_input, params.dense₁, empty_state)
-    output_hidden₂, _ = model.dense₂(output_hidden₁, params.dense₂, empty_state)
-    probs, _ = model.dense₃(output_hidden₂, params.dense₃, empty_state)
+    output_hidden₁, _ = model.dense₁(weighted_input, params.dense₁, (;))
+    output_hidden₂, _ = model.dense₂(output_hidden₁, params.dense₂, (;))
+    probs, _ = model.dense₃(output_hidden₂, params.dense₃, (;))
     # greedily choose most probable bits according to the (multivariate) Bernoulli
     # distribution specified by success probabilities `probs`
     hashcode = round.(Bool, probs)
