@@ -52,8 +52,6 @@ function train_model!(rng::AbstractRNG; num_epochs::Integer, learning_rate::Real
     @printf "Test loss  %4.6f\n" loss_test
 
     loss_val_min = Inf32
-    epoch_opt = 0
-    params_opt = params
     @info "Training..."
     for epoch in 1:num_epochs
         # train the model
@@ -74,25 +72,32 @@ function train_model!(rng::AbstractRNG; num_epochs::Integer, learning_rate::Real
         @printf "Epoch [%3d]: Validation loss  %4.6f\n" epoch loss_val
         if loss_val < loss_val_min
             loss_val_min = loss_val
-            epoch_opt = epoch
-            params_opt = train_state.parameters
+            model_parameters = train_state.parameters |> cpu
+
+            # delete previously saved model parameters
+            rm("pretrained_weights", recursive=true)
+            mkpath("pretrained_weights")
+
+            # save the current model parameters
+            jldsave(
+                "pretrained_weights/model_weights_from_epoch_$(epoch)_$(model.dim_encoding)-bits.jld2";
+                model_parameters
+            )
         end
     end
 
     @info "Training completed."
+    params_opt = train_state.parameters
     loss_test = compute_dataset_loss(model, params_opt, states_val, dataset_test)
     @printf "Test loss  %4.6f\n" loss_test
 
-    model_parameters = params_opt |> cpu
-    # save the current model parameters
-    jldsave("pretrained_weights/model_weights_from_epoch_$(epoch_opt)_$(model.dim_encoding)-bits.jld2"; model_parameters)
     return model, params_opt, states_val
 end
 
 
 # set hyperparameters
 η = 0.0004f0
-num_epochs = 100
+num_epochs = 140
 
 # train the model
 @time (model, params, states) = train_model!(rng; num_epochs, learning_rate=η)

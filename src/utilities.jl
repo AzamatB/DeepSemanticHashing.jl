@@ -1,5 +1,34 @@
 # Utility functions
 
+function hamming(bits₁::BitArray, bits₂::BitArray)
+    @assert size(bits₁) == size(bits₂)
+    chunks₁, chunks₂ = bits₁.chunks, bits₂.chunks
+    dist = 0
+    @inbounds for i = 1:(length(chunks₁)-1)
+        dist += count_ones(chunks₁[i] ⊻ chunks₂[i])
+    end
+    dist += count_ones(chunks₁[end] ⊻ chunks₂[end] & Base._msk_end(bits₁))
+    return dist
+end
+
+function hamming(bits₁::DenseArray{Bool}, bits₂::DenseArray{Bool})
+    @assert size(bits₁) == size(bits₂)
+    dist = 0
+    @inbounds for i in eachindex(bits₁)
+        dist += bits₁[i] ⊻ bits₂[i]
+    end
+    return dist
+end
+
+function hamming(
+    morpheme₁::S, morpheme₂::S, morpheme_hashcodes::AbstractDict{S,<:AbstractVector{Bool}}
+) where {S<:AbstractString}
+    hashcode₁ = morpheme_hashcodes[morpheme₁]
+    hashcode₂ = morpheme_hashcodes[morpheme₂]
+    dist = hamming(hashcode₁, hashcode₂)
+    return dist
+end
+
 function log_range(start::Real, stop::Real, len::Integer)
     exp_start = log(start)
     exp_stop = log(stop)
