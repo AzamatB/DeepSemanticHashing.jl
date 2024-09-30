@@ -97,7 +97,7 @@ end
 
 # set hyperparameters
 η = 0.0004f0
-num_epochs = 140
+num_epochs = 150
 
 # train the model
 @time (model, params, states) = train_model!(rng; num_epochs, learning_rate=η)
