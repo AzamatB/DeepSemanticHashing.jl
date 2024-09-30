@@ -1,0 +1,296 @@
+julia> include("src/main.jl")
+┌ Warning: `replicate` doesn't work for `TaskLocalRNG`. Returning the same `TaskLocalRNG`.
+└ @ LuxCore C:\Users\3LIMONA\.julia\packages\LuxCore\IBKvY\src\LuxCore.jl:18
+PairRecSemanticHasher(
+    dense₁ = Dense(23834 => 15911, relu),  # 379_238_685 parameters
+    dense₂ = Dense(15911 => 7988, relu),  # 127_105_056 parameters
+    dropout = Dropout(0.1),
+    dense₃ = Dense(7988 => 64, σ),      # 511_296 parameters
+)         # Total: 508_428_081 parameters,
+          #        plus 3 states.
+Test loss  10.692607
+[ Info: Training...
+Epoch [  1]: Training Loss  6.482413
+Epoch [  1]: Validation loss  6.038974
+Epoch [  2]: Training Loss  5.930591
+Epoch [  2]: Validation loss  5.878738
+Epoch [  3]: Training Loss  5.800735
+Epoch [  3]: Validation loss  5.784140
+Epoch [  4]: Training Loss  5.726081
+Epoch [  4]: Validation loss  5.733476
+Epoch [  5]: Training Loss  5.679010
+Epoch [  5]: Validation loss  5.708237
+Epoch [  6]: Training Loss  5.649726
+Epoch [  6]: Validation loss  5.674893
+Epoch [  7]: Training Loss  5.621750
+Epoch [  7]: Validation loss  5.649339
+Epoch [  8]: Training Loss  5.599366
+Epoch [  8]: Validation loss  5.644204
+Epoch [  9]: Training Loss  5.579489
+Epoch [  9]: Validation loss  5.623372
+Epoch [ 10]: Training Loss  5.565762
+Epoch [ 10]: Validation loss  5.611249
+Epoch [ 11]: Training Loss  5.551344
+Epoch [ 11]: Validation loss  5.609051
+Epoch [ 12]: Training Loss  5.540688
+Epoch [ 12]: Validation loss  5.582324
+Epoch [ 13]: Training Loss  5.526984
+Epoch [ 13]: Validation loss  5.575234
+Epoch [ 14]: Training Loss  5.515151
+Epoch [ 14]: Validation loss  5.572414
+Epoch [ 15]: Training Loss  5.507729
+Epoch [ 15]: Validation loss  5.558931
+Epoch [ 16]: Training Loss  5.497030
+Epoch [ 16]: Validation loss  5.546861
+Epoch [ 17]: Training Loss  5.486563
+Epoch [ 17]: Validation loss  5.544340
+Epoch [ 18]: Training Loss  5.476486
+Epoch [ 18]: Validation loss  5.535952
+Epoch [ 19]: Training Loss  5.468596
+Epoch [ 19]: Validation loss  5.519021
+Epoch [ 20]: Training Loss  5.458775
+Epoch [ 20]: Validation loss  5.525482
+Epoch [ 21]: Training Loss  5.450618
+Epoch [ 21]: Validation loss  5.515079
+Epoch [ 22]: Training Loss  5.445095
+Epoch [ 22]: Validation loss  5.504556
+Epoch [ 23]: Training Loss  5.438982
+Epoch [ 23]: Validation loss  5.502784
+Epoch [ 24]: Training Loss  5.429250
+Epoch [ 24]: Validation loss  5.490519
+Epoch [ 25]: Training Loss  5.419563
+Epoch [ 25]: Validation loss  5.477710
+Epoch [ 26]: Training Loss  5.414525
+Epoch [ 26]: Validation loss  5.471429
+Epoch [ 27]: Training Loss  5.407438
+Epoch [ 27]: Validation loss  5.474262
+Epoch [ 28]: Training Loss  5.400251
+Epoch [ 28]: Validation loss  5.461882
+Epoch [ 29]: Training Loss  5.391181
+Epoch [ 29]: Validation loss  5.460793
+Epoch [ 30]: Training Loss  5.382572
+Epoch [ 30]: Validation loss  5.446586
+Epoch [ 31]: Training Loss  5.375770
+Epoch [ 31]: Validation loss  5.450553
+Epoch [ 32]: Training Loss  5.369545
+Epoch [ 32]: Validation loss  5.436366
+Epoch [ 33]: Training Loss  5.363871
+Epoch [ 33]: Validation loss  5.444786
+Epoch [ 34]: Training Loss  5.356225
+Epoch [ 34]: Validation loss  5.436812
+Epoch [ 35]: Training Loss  5.352016
+Epoch [ 35]: Validation loss  5.431570
+Epoch [ 36]: Training Loss  5.342668
+Epoch [ 36]: Validation loss  5.414601
+Epoch [ 37]: Training Loss  5.335822
+Epoch [ 37]: Validation loss  5.395757
+Epoch [ 38]: Training Loss  5.329292
+Epoch [ 38]: Validation loss  5.404806
+Epoch [ 39]: Training Loss  5.322005
+Epoch [ 39]: Validation loss  5.392313
+Epoch [ 40]: Training Loss  5.314747
+Epoch [ 40]: Validation loss  5.385072
+Epoch [ 41]: Training Loss  5.309054
+Epoch [ 41]: Validation loss  5.388079
+Epoch [ 42]: Training Loss  5.303509
+Epoch [ 42]: Validation loss  5.374518
+Epoch [ 43]: Training Loss  5.296064
+Epoch [ 43]: Validation loss  5.367753
+Epoch [ 44]: Training Loss  5.291260
+Epoch [ 44]: Validation loss  5.374246
+Epoch [ 45]: Training Loss  5.283831
+Epoch [ 45]: Validation loss  5.368098
+Epoch [ 46]: Training Loss  5.276445
+Epoch [ 46]: Validation loss  5.355262
+Epoch [ 47]: Training Loss  5.269231
+Epoch [ 47]: Validation loss  5.363627
+Epoch [ 48]: Training Loss  5.261098
+Epoch [ 48]: Validation loss  5.345365
+Epoch [ 49]: Training Loss  5.256281
+Epoch [ 49]: Validation loss  5.325431
+Epoch [ 50]: Training Loss  5.249332
+Epoch [ 50]: Validation loss  5.334362
+Epoch [ 51]: Training Loss  5.243203
+Epoch [ 51]: Validation loss  5.327871
+Epoch [ 52]: Training Loss  5.238085
+Epoch [ 52]: Validation loss  5.320787
+Epoch [ 53]: Training Loss  5.229669
+Epoch [ 53]: Validation loss  5.328290
+Epoch [ 54]: Training Loss  5.223909
+Epoch [ 54]: Validation loss  5.301816
+Epoch [ 55]: Training Loss  5.218295
+Epoch [ 55]: Validation loss  5.298364
+Epoch [ 56]: Training Loss  5.207604
+Epoch [ 56]: Validation loss  5.297964
+Epoch [ 57]: Training Loss  5.204446
+Epoch [ 57]: Validation loss  5.299329
+Epoch [ 58]: Training Loss  5.196859
+Epoch [ 58]: Validation loss  5.294483
+Epoch [ 59]: Training Loss  5.191227
+Epoch [ 59]: Validation loss  5.280716
+Epoch [ 60]: Training Loss  5.182901
+Epoch [ 60]: Validation loss  5.278059
+Epoch [ 61]: Training Loss  5.175423
+Epoch [ 61]: Validation loss  5.281788
+Epoch [ 62]: Training Loss  5.170701
+Epoch [ 62]: Validation loss  5.272495
+Epoch [ 63]: Training Loss  5.162962
+Epoch [ 63]: Validation loss  5.263911
+Epoch [ 64]: Training Loss  5.156169
+Epoch [ 64]: Validation loss  5.260378
+Epoch [ 65]: Training Loss  5.150903
+Epoch [ 65]: Validation loss  5.262427
+Epoch [ 66]: Training Loss  5.143031
+Epoch [ 66]: Validation loss  5.244706
+Epoch [ 67]: Training Loss  5.135110
+Epoch [ 67]: Validation loss  5.240113
+Epoch [ 68]: Training Loss  5.127987
+Epoch [ 68]: Validation loss  5.222026
+Epoch [ 69]: Training Loss  5.122285
+Epoch [ 69]: Validation loss  5.223620
+Epoch [ 70]: Training Loss  5.113559
+Epoch [ 70]: Validation loss  5.225654
+Epoch [ 71]: Training Loss  5.108554
+Epoch [ 71]: Validation loss  5.228893
+Epoch [ 72]: Training Loss  5.101830
+Epoch [ 72]: Validation loss  5.207421
+Epoch [ 73]: Training Loss  5.092339
+Epoch [ 73]: Validation loss  5.208942
+Epoch [ 74]: Training Loss  5.086403
+Epoch [ 74]: Validation loss  5.202366
+Epoch [ 75]: Training Loss  5.079547
+Epoch [ 75]: Validation loss  5.199932
+Epoch [ 76]: Training Loss  5.073612
+Epoch [ 76]: Validation loss  5.186438
+Epoch [ 77]: Training Loss  5.064964
+Epoch [ 77]: Validation loss  5.170193
+Epoch [ 78]: Training Loss  5.058152
+Epoch [ 78]: Validation loss  5.181950
+Epoch [ 79]: Training Loss  5.052512
+Epoch [ 79]: Validation loss  5.173850
+Epoch [ 80]: Training Loss  5.046421
+Epoch [ 80]: Validation loss  5.166061
+Epoch [ 81]: Training Loss  5.037039
+Epoch [ 81]: Validation loss  5.160372
+Epoch [ 82]: Training Loss  5.031941
+Epoch [ 82]: Validation loss  5.150100
+Epoch [ 83]: Training Loss  5.026356
+Epoch [ 83]: Validation loss  5.142039
+Epoch [ 84]: Training Loss  5.018664
+Epoch [ 84]: Validation loss  5.151197
+Epoch [ 85]: Training Loss  5.010927
+Epoch [ 85]: Validation loss  5.138887
+Epoch [ 86]: Training Loss  5.004441
+Epoch [ 86]: Validation loss  5.135429
+Epoch [ 87]: Training Loss  4.997443
+Epoch [ 87]: Validation loss  5.130405
+Epoch [ 88]: Training Loss  4.989742
+Epoch [ 88]: Validation loss  5.115456
+Epoch [ 89]: Training Loss  4.983181
+Epoch [ 89]: Validation loss  5.112803
+Epoch [ 90]: Training Loss  4.979533
+Epoch [ 90]: Validation loss  5.105276
+Epoch [ 91]: Training Loss  4.971016
+Epoch [ 91]: Validation loss  5.107652
+Epoch [ 92]: Training Loss  4.962934
+Epoch [ 92]: Validation loss  5.105155
+Epoch [ 93]: Training Loss  4.956315
+Epoch [ 93]: Validation loss  5.094372
+Epoch [ 94]: Training Loss  4.950864
+Epoch [ 94]: Validation loss  5.090238
+Epoch [ 95]: Training Loss  4.940728
+Epoch [ 95]: Validation loss  5.087856
+Epoch [ 96]: Training Loss  4.936847
+Epoch [ 96]: Validation loss  5.069564
+Epoch [ 97]: Training Loss  4.929677
+Epoch [ 97]: Validation loss  5.074901
+Epoch [ 98]: Training Loss  4.921546
+Epoch [ 98]: Validation loss  5.067184
+Epoch [ 99]: Training Loss  4.917395
+Epoch [ 99]: Validation loss  5.071761
+Epoch [100]: Training Loss  4.911795
+Epoch [100]: Validation loss  5.063452
+Epoch [101]: Training Loss  4.904434
+Epoch [101]: Validation loss  5.054294
+Epoch [102]: Training Loss  4.898115
+Epoch [102]: Validation loss  5.054818
+Epoch [103]: Training Loss  4.890882
+Epoch [103]: Validation loss  5.051161
+Epoch [104]: Training Loss  4.885432
+Epoch [104]: Validation loss  5.044478
+Epoch [105]: Training Loss  4.879068
+Epoch [105]: Validation loss  5.040063
+Epoch [106]: Training Loss  4.873264
+Epoch [106]: Validation loss  5.035172
+Epoch [107]: Training Loss  4.867227
+Epoch [107]: Validation loss  5.032777
+Epoch [108]: Training Loss  4.860362
+Epoch [108]: Validation loss  5.029726
+Epoch [109]: Training Loss  4.854975
+Epoch [109]: Validation loss  5.020171
+Epoch [110]: Training Loss  4.848989
+Epoch [110]: Validation loss  5.007358
+Epoch [111]: Training Loss  4.845032
+Epoch [111]: Validation loss  5.009957
+Epoch [112]: Training Loss  4.839217
+Epoch [112]: Validation loss  5.016836
+Epoch [113]: Training Loss  4.835752
+Epoch [113]: Validation loss  5.012120
+Epoch [114]: Training Loss  4.829157
+Epoch [114]: Validation loss  5.004284
+Epoch [115]: Training Loss  4.825296
+Epoch [115]: Validation loss  4.991618
+Epoch [116]: Training Loss  4.820339
+Epoch [116]: Validation loss  4.999917
+Epoch [117]: Training Loss  4.816807
+Epoch [117]: Validation loss  4.984185
+Epoch [118]: Training Loss  4.811543
+Epoch [118]: Validation loss  4.981219
+Epoch [119]: Training Loss  4.805916
+Epoch [119]: Validation loss  4.980852
+Epoch [120]: Training Loss  4.802189
+Epoch [120]: Validation loss  4.982363
+Epoch [121]: Training Loss  4.800186
+Epoch [121]: Validation loss  4.978892
+Epoch [122]: Training Loss  4.797753
+Epoch [122]: Validation loss  4.975079
+Epoch [123]: Training Loss  4.794714
+Epoch [123]: Validation loss  4.975108
+Epoch [124]: Training Loss  4.791280
+Epoch [124]: Validation loss  4.970853
+Epoch [125]: Training Loss  4.787455
+Epoch [125]: Validation loss  4.966667
+Epoch [126]: Training Loss  4.786268
+Epoch [126]: Validation loss  4.971272
+Epoch [127]: Training Loss  4.786347
+Epoch [127]: Validation loss  4.976082
+Epoch [128]: Training Loss  4.783473
+Epoch [128]: Validation loss  4.969681
+Epoch [129]: Training Loss  4.782807
+Epoch [129]: Validation loss  4.976269
+Epoch [130]: Training Loss  4.783003
+Epoch [130]: Validation loss  4.984317
+Epoch [131]: Training Loss  4.784276
+Epoch [131]: Validation loss  4.975493
+Epoch [132]: Training Loss  4.783606
+Epoch [132]: Validation loss  4.970417
+Epoch [133]: Training Loss  4.782141
+Epoch [133]: Validation loss  4.973850
+Epoch [134]: Training Loss  4.780249
+Epoch [134]: Validation loss  4.981550
+Epoch [135]: Training Loss  4.780713
+Epoch [135]: Validation loss  4.982364
+Epoch [136]: Training Loss  4.781165
+Epoch [136]: Validation loss  4.985444
+Epoch [137]: Training Loss  4.779082
+Epoch [137]: Validation loss  4.974850
+Epoch [138]: Training Loss  4.781148
+Epoch [138]: Validation loss  4.975977
+Epoch [139]: Training Loss  4.779470
+Epoch [139]: Validation loss  4.975938
+Epoch [140]: Training Loss  4.779890
+Epoch [140]: Validation loss  4.984102
+[ Info: Training completed.
+Test loss  4.971582
+54217.077258 seconds (5.71 G allocations: 333.036 GiB, 2.23% gc time, 0.05% compilation time: 2% of which was recompilation)        
+(PairRecSemanticHasher{Dense{typeof(relu), Int64, Int64, Nothing, Nothing, Static.True}, Dense{typeof(relu), Int64, Int64, Nothing, Nothing, Static.True}, Dropout{Float32, Colon}, Dense{typeof(σ), Int64, Int64, Nothing, Nothing, Static.True}}(23834, 64, 15911, 7988, Dense(23834 => 15911, relu), Dense(15911 => 7988, relu), Dropout(0.1), Dense(7988 => 64, σ)), (importance_weights = Float32[1.5141511, 1.943141, 1.7897853, 1.5925364, 1.8025378, 2.096621, 1.6119361, 1.6056598, 2.2019174, 2.103336  …  1.8925728, -2.435834, 3.355889, 3.5428107, 2.782259, 2.358842, 3.0971646, 4.087441, 2.5573978, 2.7752483], dense₁ = (weight = Float32[-0.25162935 0.252288 … 8.128386f-5 0.02058489; -0.3258714 -0.22835214 … -0.007393068 -0.01531141; … ; -0.1099297 0.18508068 … 0.008118313 0.021134818; -0.16402443 -0.062921286 … -0.014482183 -0.0059919455], bias = Float32[-0.22585231, -0.3293042, -0.2138588, -0.29846376, -0.12263933, -0.103006504, -0.29445374, -0.2743051, -0.26023856, -0.44224232  …  -0.18003066, -0.25746927, -0.2085822, -0.109583184, -0.2969222, -0.33007607, -0.1402948, -0.18011518, -0.21827318, -0.07581442]), dense₂ = (weight = Float32[-0.013482666 0.026025856 … -0.046191204 0.017598024; -0.17720881 0.15527602 … -0.20900232 -0.2827012; … ; -0.028103316 -0.021229142 … 0.021640865 -0.00939561; 0.40262616 0.7782698 … 0.3221993 -0.08695145], bias = Float32[-0.012059345, 0.074279584, -0.024018815, -0.011449874, -0.018476464, -0.39194453, -0.2188534, -0.028689148, 0.16202027, -0.0385142  …  -0.20193376, -0.12251788, -0.03876025, -0.5791459, -0.022187991, -0.06628542, -0.13909371, 0.0848603, -0.014964775, -0.1982132]), dropout = NamedTuple(), dense₃ = (weight = Float32[0.012455647 0.08636562 … 0.0056194873 0.27124622; 0.007619936 -0.08257687 … -0.022760032 0.12704271; … ; -0.031640477 0.07068112 … -0.025878051 -0.015945898; -0.035774417 0.09743291 … 0.017413042 -0.019897046], bias = Float32[-0.27938253, -0.37781963, -0.065693885, -0.090575986, 0.3448182, -0.10515296, -0.39620724, -0.42201927, -0.72474766, -0.36374515  …  0.36604974, 0.18912758, -0.16673993, -0.4336661, 0.100753956, -0.4833595, -0.13527822, -0.17551003, 0.22435948, 0.37798086]), word_embedding = Float32[-2.4231167 -2.6063132 … -2.7662356 -3.1499407; -1.5271817 -1.877368 … -1.9271941 -1.9136145; … ; -1.2840445 -1.4399774 … -1.4277177 -1.7363725; -1.1584337 -1.1767862 … -1.4965975 -1.410006], decoder_bias = Float32[-2.8146276, -0.42263213, -7.270404, -2.0479136, -3.8965178, -3.3920455, -2.0732334, -3.434768, 0.2616157, -5.240237  …  -5.2728114, -5.715955, -6.039417, -4.38321, -5.706128, -5.199312, -6.5127735, -5.3897524, -5.0978293, -6.289819]), (dense₁ = NamedTuple(), dense₂ = NamedTuple(), dropout = (rng = CUDA.RNG(0x82cc5967, 0x62bf8500), training = Val{false}()), dense₃ = NamedTuple(), λ = 0.0f0))
