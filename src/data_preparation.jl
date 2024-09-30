@@ -39,7 +39,7 @@ function prepare_dataset(
     return (clusters, cluster_datapoints)
 end
 
-function load_datasets(device::MLDataDevices.AbstractDevice; split_at::AbstractFloat=0.94)
+function load_datasets(device::MLDataDevices.AbstractDevice; split_at::AbstractFloat=0.95)
     @assert 0.0 < split_at < 1.0
     assignments = load_file("data/assignments.szd")
     morpheme_counts = load_file("data/counts_matrix.szd")
@@ -48,18 +48,11 @@ function load_datasets(device::MLDataDevices.AbstractDevice; split_at::AbstractF
     datapoints_train = datapoints |> device
 
     # size of the validation + test sets
-    len_val_test = round(Int, (1 - split_at) * length(datapoints_train))
-    len_val = len_val_test ÷ 2
-
-    indices_val_test = sample(eachindex(datapoints_train), len_val_test; replace=false)
-    # parition the selected data subset into validation and test sets
-    indices_val = indices_val_test[begin:len_val]
-    indices_test = indices_val_test[(len_val+1):end]
-
+    len_val = ceil(Int, (1 - split_at) * length(datapoints_train))
+    indices_val = sample(eachindex(datapoints_train), len_val; replace=false)
     datapoints_val = datapoints_train[indices_val]
-    datapoints_test = datapoints_train[indices_test]
 
-    sort!(indices_val_test)
-    deleteat!(datapoints_train, indices_val_test)
-    return datapoints_train, datapoints_val, datapoints_test
+    sort!(indices_val)
+    deleteat!(datapoints_train, indices_val)
+    return datapoints_train, datapoints_val
 end

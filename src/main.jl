@@ -31,7 +31,7 @@ include("data_preparation.jl")
 
 function train_model!(rng::AbstractRNG; num_epochs::Integer, learning_rate::Real = 0.001f0)
     # load datasets
-    (dataset_train, dataset_val, dataset_test) = load_datasets(device)
+    (dataset_train, dataset_val) = load_datasets(device)
 
     # construct the model
     dim_in = size(first(dataset_train), 1)
@@ -48,10 +48,8 @@ function train_model!(rng::AbstractRNG; num_epochs::Integer, learning_rate::Real
 
     display(model)
     states_val = Lux.testmode(train_state.states)
-    loss_test = compute_dataset_loss(model, params, states_val, dataset_test)
-    @printf "Test loss  %4.6f\n" loss_test
-
-    loss_val_min = Inf32
+    loss_val_min = compute_dataset_loss(model, params, states_val, dataset_val)
+    @printf "Validation loss before training:  %4.6f\n" loss_val_min
     @info "Training..."
     for epoch in 1:num_epochs
         # train the model
@@ -88,8 +86,7 @@ function train_model!(rng::AbstractRNG; num_epochs::Integer, learning_rate::Real
 
     @info "Training completed."
     params_opt = train_state.parameters
-    loss_test = compute_dataset_loss(model, params_opt, states_val, dataset_test)
-    @printf "Test loss  %4.6f\n" loss_test
+    states_val = Lux.testmode(train_state.states)
 
     return model, params_opt, states_val
 end
