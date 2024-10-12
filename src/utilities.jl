@@ -37,13 +37,20 @@ function log_range(start::Real, stop::Real, len::Integer)
     return rng
 end
 
-function add_noise(x::AbstractMatrix{Bool}, λ::Float32, rng::AbstractRNG)
+function add_noise(x::AbstractMatrix{Bool}, λ::Float32, rng::AbstractRNG, is_training::Val{true})
     # add small white noise to the encoding
     ε = λ * randn(rng, Float32, size(x))
-    return x + ε
+    x_noisy = x + ε
+    λ -= 1.0f-6
+    λ *= (λ > 0)
+    return x_noisy, λ
 end
 
-function sample_bernoulli(probs::DenseMatrix{Float32}, rng::AbstractRNG)
+function add_noise(x::AbstractMatrix{Bool}, λ::Float32, rng::AbstractRNG, is_training::Val{false})
+    return x, λ
+end
+
+function sample_bernoulli(probs::DenseMatrix{Float32}, rng::AbstractRNG, is_training::Val{true})
     # sample (multivariate) Bernoulli distribution specified by success probabilities
     # `probs`
     uniform_sample = rand(rng, Float32, size(probs))
@@ -51,28 +58,24 @@ function sample_bernoulli(probs::DenseMatrix{Float32}, rng::AbstractRNG)
     return trials
 end
 
-# straight-through estimator for the gradient of `add_noise` function, i.e. we are assuming
-# that it behaves as an identity function (λ = 0) for the purpose of gradient computation.
-# function ChainRules.rrule(
-#     ::typeof(add_noise), x::AbstractMatrix{Bool}, λ::Float32, rng::AbstractRNG
-# )
-#     function identity_pullback(ȳ)
-#         return (NoTangent(), ȳ, NoTangent(), NoTangent())
-#     end
-#     return (add_noise(x, λ, rng), identity_pullback)
-# end
+function sample_bernoulli(probs::DenseMatrix{Float32}, rng::AbstractRNG, is_training::Val{false})
+    return round.(Bool, probs)
+end
 
 # `sample_bernoulli(..)` is not differentiable in a strict sense, so to work around this we
 # define a straight-through estimator for its gradient, i.e. we are assuming that it behaves
 # as an identity function for the purpose of gradient computation.
 # See arxiv.org/abs/1308.3432 for some theoretical and empirical justifications behind this.
 function ChainRules.rrule(
-    ::typeof(sample_bernoulli), probs::DenseMatrix{Float32}, rng::AbstractRNG
+    ::typeof(sample_bernoulli),
+    probs::DenseMatrix{Float32},
+    rng::AbstractRNG,
+    is_training::Union{Val{true},Val{false}}
 )
     function identity_pullback(ȳ)
-        return (NoTangent(), ȳ, NoTangent())
+        return (NoTangent(), ȳ, NoTangent(), NoTangent())
     end
-    return (sample_bernoulli(probs, rng), identity_pullback)
+    return (sample_bernoulli(probs, rng, is_training), identity_pullback)
 end
 
 # Calculates Kullback-Leibler (KL) divergence between two multivariate Bernoulli

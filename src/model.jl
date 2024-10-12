@@ -82,6 +82,7 @@ function (model::PairRecSemanticHasher)(
     input::DenseMatrix{Float32}, params::NamedTuple, states::NamedTuple
 )
     rng = states.dropout.rng
+    is_training = states.dropout.training
     importance_weights = params.importance_weights
     word_embedding = params.word_embedding
     decoder_bias = params.decoder_bias
@@ -91,10 +92,10 @@ function (model::PairRecSemanticHasher)(
     output_hidden₂, _ = model.dense₂(output_hidden₁, params.dense₂, (;))
     output_dropped, _ = model.dropout(output_hidden₂, (;), states.dropout)
     encoding, _ = model.dense₃(output_dropped, params.dense₃, (;))
-    hashcode = sample_bernoulli(encoding, rng)
+    hashcode = sample_bernoulli(encoding, rng, is_training)
 
     # decoding stage
-    noisy_hashcode = add_noise(hashcode, states.λ, rng)
+    noisy_hashcode, λ = add_noise(hashcode, states.λ, rng, is_training)
     # (dim_in × dim_encoding) * (dim_encoding × batch_size) ≡ (dim_in × batch_size)
     projection = word_embedding * noisy_hashcode
     # (dim_in × batch_size) .* (dim_in × 1) .+ (dim_in × 1) ≡ (dim_in × batch_size)
@@ -102,7 +103,6 @@ function (model::PairRecSemanticHasher)(
     decoding = logsoftmax(logits; dims=1) # (dim_in × batch_size)
 
     # decay noise
-    λ = max(states.λ - 1.0f-6, 0.0f0)
     states = (; states.dropout, λ)
 
     return (decoding, states)
