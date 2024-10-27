@@ -19,9 +19,9 @@ end
 
 function PairRecSemanticHasher(
     dim_in::Integer,
-    dim_encoding::Integer = 16,
-    dim_hidden₁::Integer = ceil(Int, range(dim_in, dim_encoding; length = 4)[2]),
-    dim_hidden₂::Integer = ceil(Int, range(dim_in, dim_encoding; length = 4)[3]),
+    dim_encoding::Integer = 64,
+    dim_hidden₁::Integer = ceil(Int, logrange(dim_in, dim_encoding; length = 4)[2]),
+    dim_hidden₂::Integer = ceil(Int, logrange(dim_in, dim_encoding; length = 4)[3]),
     drop_prob::Real = 0.1f0
 )
     dense₁ = Dense(dim_in => dim_hidden₁, relu)
